@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -15,7 +16,6 @@
         @media (orientation: landscape) {
             #setup-form { grid-template-columns: repeat(2, 1fr); display: grid; gap: 1rem; align-items: center; max-width: 600px; margin: auto; }
             #setup-form button { grid-column: span 2; }
-            #setup-form .logo-header { grid-column: span 2; }
             .app-layout { flex-direction: row !important; gap: 1rem; }
             .video-wrapper { width: 60%; }
             .controls-area { width: 40%; }
@@ -36,7 +36,7 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.0</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.1 (HD-Tuned)</p>
             </div>
         </header>
 
@@ -74,7 +74,6 @@
         let photos = [];
         const maxPhotos = 10;
         const logo = new Image();
-        // Zieht das Logo jetzt direkt aus deinem GitHub-Ordner
         logo.src = "logo.png"; 
 
         async function initCamera() {
@@ -84,8 +83,14 @@
             if(!name || !dob || !product) return alert("Bitte alle Felder ausfüllen!");
 
             try {
+                // Strengere Anforderungen für Android (Samsung)
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+                    video: { 
+                        facingMode: "environment", 
+                        width: { min: 1280, ideal: 1920, max: 2560 },
+                        height: { min: 720, ideal: 1080, max: 1440 },
+                        focusMode: "continuous"
+                    }, 
                     audio: false 
                 });
                 const video = document.getElementById('video-preview');
@@ -102,6 +107,8 @@
             const video = document.getElementById('video-preview');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
+            
+            // Nutze die tatsächliche Video-Auflösung
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
@@ -123,11 +130,12 @@
                 ctx.globalAlpha = 1.0;
             }
 
+            // Qualität auf 0.92 (92%) angehoben
             canvas.toBlob((blob) => {
                 const newFile = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
                 photos.push(newFile);
                 updateUI();
-            }, "image/jpeg", 0.85);
+            }, "image/jpeg", 0.92);
         }
 
         function updateUI() {
