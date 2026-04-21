@@ -11,13 +11,20 @@
         .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex-grow: 1; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         .controls-area { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; }
+        
+        /* Optimierung für Querformat - Setup & Kamera */
         @media (orientation: landscape) {
+            #setup-form { grid-template-columns: repeat(2, 1fr); display: grid; gap: 1rem; align-items: center; max-width: 600px; margin: auto; }
+            #setup-form button { grid-column: span 2; }
+            #setup-form .logo-header { grid-column: span 2; }
+
             .app-layout { flex-direction: row !important; gap: 1rem; }
-            .video-wrapper { width: 65%; }
-            .controls-area { width: 35%; }
+            .video-wrapper { width: 60%; }
+            .controls-area { width: 40%; }
             header { display: none; }
             #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: none !important; overflow-y: auto; }
         }
+
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 80px; overflow-y: auto; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
         video::-webkit-media-controls { display:none !important; }
@@ -27,18 +34,19 @@
 </head>
 <body class="p-3">
     <div class="max-w-5xl mx-auto h-full flex flex-col app-layout">
-        <header class="relative mb-2 flex items-center justify-center flex-shrink-0">
+        <header class="relative mb-2 flex items-center justify-center flex-shrink-0 logo-header">
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.6</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.9 (PRO)</p>
             </div>
         </header>
 
-        <div id="setup-form" class="space-y-4 my-auto">
-            <input type="text" id="client-name" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Kunde">
-            <input type="text" id="project-id" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Projekt">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-lg">Kamera starten</button>
+        <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto flex flex-col">
+            <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Name, Vorname (Kunde)">
+            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum (z.B. 01.01.1970)">
+            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Produkt / Versorgung (wofür KV?)">
+            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl mt-2">Kamera starten</button>
         </div>
 
         <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
@@ -52,7 +60,7 @@
             </div>
             <div class="controls-area">
                 <div class="flex justify-between items-center gap-2">
-                    <div class="bg-gray-900/80 p-2 rounded text-[10px] flex-1 truncate border border-gray-700 text-blue-400">
+                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400">
                         <span id="display-info"></span> | <span id="photo-count" class="font-bold">0 / 10</span>
                     </div>
                     <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
@@ -69,12 +77,16 @@
         const maxPhotos = 10;
         const logo = new Image();
         logo.crossOrigin = "anonymous";
+        // Wir nutzen dein Logo als Wasserzeichen
         logo.src = "https://sanitätshaus-schmiedel.de/wp-content/uploads/2016/10/logo_home.png";
 
         async function initCamera() {
             const name = document.getElementById('client-name').value;
-            const id = document.getElementById('project-id').value;
-            if(!name || !id) return alert("Daten eingeben!");
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            
+            // Wichtig: Wir brauchen alle 3 Infos für eine saubere Doku
+            if(!name || !dob || !product) return alert("Bitte alle 3 Felder ausfüllen!");
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -84,9 +96,11 @@
                 const video = document.getElementById('video-preview');
                 video.srcObject = stream;
                 video.play();
+                document.getElementById('setup-form').style.display = 'none'; // Flex/Grid Fix
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
-                document.getElementById('display-info').innerText = `${name} | ${id}`;
+                // Anzeige in der App kurz halten
+                document.getElementById('display-info').innerText = `${name} - ${dob}`;
             } catch (err) { alert("Kamera-Fehler"); }
         }
 
@@ -100,21 +114,24 @@
             ctx.drawImage(video, 0, 0);
 
             const name = document.getElementById('client-name').value;
-            const id = document.getElementById('project-id').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
             
-            const fontSize = Math.floor(canvas.width / 30);
+            // --- Wasserzeichen & Stempel zeichnen ---
+            
+            // 1. Text-Stempel unten rechts mit neuem Strich "-"
+            const fontSize = Math.floor(canvas.width / 38); // Etwas kleiner, da mehr Text
             ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = "white"; 
-            ctx.shadowColor = "black"; 
-            ctx.shadowBlur = 8; 
-            ctx.textAlign = "right";
-            ctx.fillText(`Kostenvoranschlag für ${name} - ${id}`, canvas.width - 40, canvas.height - 40);
+            ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
+            
+            // Format: Foto Doku: Name - DOB - Produkt
+            ctx.fillText(`Foto Doku: ${name} - ${dob} - ${product}`, canvas.width - 40, canvas.height - 40);
 
+            // 2. Logo oben rechts (dein Firmenlogo)
             if(logo.complete && logo.naturalWidth !== 0) {
                 const logoWidth = canvas.width * 0.25;
                 const logoHeight = (logo.naturalHeight / logo.naturalWidth) * logoWidth;
-                ctx.globalAlpha = 0.85;
-                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 0.85; ctx.shadowBlur = 0;
                 ctx.drawImage(logo, canvas.width - logoWidth - 40, 40, logoWidth, logoHeight);
                 ctx.globalAlpha = 1.0;
             }
@@ -141,15 +158,18 @@
 
         async function sharePhotos() {
             const name = document.getElementById('client-name').value;
-            const id = document.getElementById('project-id').value;
-            const combinedInfo = `Kostenvoranschlag für ${name} + ${id}`;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            
+            // Die kombinierte Info für Betreff und Text (mit dem Strich)
+            const combinedInfo = `${name} - ${dob} - ${product}`;
             
             if (navigator.share && photos.length > 0) {
                 try {
                     await navigator.share({
                         files: photos,
-                        title: combinedInfo, // Dies wird oft als Betreff in E-Mails genutzt
-                        text: combinedInfo   // Dies wird in den E-Mail Body geschrieben
+                        title: `KV für ${combinedInfo}`, // E-Mail Betreff
+                        text: `Anbei Foto Doku für KV: ${combinedInfo}` // E-Mail Inhalt
                     });
                 } catch (e) { }
             }
