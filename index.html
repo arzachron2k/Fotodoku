@@ -28,7 +28,7 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.3</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.4</p>
             </div>
         </header>
 
@@ -100,18 +100,12 @@
             const product = document.getElementById('product-info').value;
             const margin = 40;
 
-            // 1. Logo & Text oben rechts (Einfach & Sicher)
+            // 1. NUR Logo oben rechts (Text entfernt)
             if(logoImg.complete && logoImg.naturalWidth !== 0) {
-                const logoW = canvas.width * 0.15;
+                const logoW = canvas.width * 0.18; // Etwas größer, da der Text fehlt
                 const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
                 ctx.shadowBlur = 0;
                 ctx.drawImage(logoImg, canvas.width - logoW - margin, margin, logoW, logoH);
-                
-                // Kleiner Text unter dem Logo
-                ctx.font = `bold ${Math.floor(canvas.width / 60)}px sans-serif`;
-                ctx.fillStyle = "white"; ctx.textAlign = "right";
-                ctx.shadowColor = "black"; ctx.shadowBlur = 5;
-                ctx.fillText("Sanitätshaus Schmiedel", canvas.width - margin, margin + logoH + 25);
             }
 
             // 2. Foto-Doku Stempel unten rechts
