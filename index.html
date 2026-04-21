@@ -28,7 +28,7 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2 cursor-pointer">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.6 (Light Mode)</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.7 (Clean Logo)</p>
             </div>
         </header>
 
@@ -108,10 +108,20 @@
                 const bX = canvas.width - bW - margin;
                 const bY = margin;
 
-                // HELLER & TRANSPARENTER (45% Deckkraft)
+                // 1. Hintergrund-Balken zeichnen (wie gehabt)
                 ctx.fillStyle = "rgba(100, 100, 100, 0.45)"; 
                 roundRect(ctx, bX, bY, bW, bH, 15, true, false);
+
+                // --- DER LOGO-CLEAN-TRICK ---
+                
+                // Mischmodus auf "multiply" setzen: Dunkle Teile bleiben, Weiße Teile fressen das Grau
+                ctx.globalCompositeOperation = 'multiply';
+                
+                // Logo zeichnen
                 ctx.drawImage(logoImg, bX + padding, bY + padding, logoW, logoH);
+                
+                // Mischmodus unbedingt wieder auf Standard zurücksetzen
+                ctx.globalCompositeOperation = 'source-over';
             }
 
             const fontSize = Math.floor(canvas.width / 45); 
