@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SH-Schmiedel Foto-App</title>
+    <title>SH-Schmiedel Foto-App - OT-Doku</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; }
@@ -14,7 +14,6 @@
 
         .controls-area { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; }
 
-        /* Querformat Optimierung */
         @media (orientation: landscape) {
             .app-layout { flex-direction: row !important; gap: 1rem; }
             .video-wrapper { width: 65%; }
@@ -27,7 +26,6 @@
         canvas { position: fixed; left: -9999px; visibility: hidden; }
         video::-webkit-media-controls { display:none !important; }
         
-        /* Das @ Symbol als Button stylen */
         .mail-shortcut { cursor: pointer; transition: transform 0.1s; }
         .mail-shortcut:active { transform: scale(0.8); }
     </style>
@@ -38,14 +36,14 @@
         <header class="relative mb-2 flex items-center justify-center flex-shrink-0">
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut" title="Direkt senden">@</div>
             <div class="text-center">
-                <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.2</p>
+                <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel - Solingen</h1>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.3 (PRO)</p>
             </div>
         </header>
 
         <div id="setup-form" class="space-y-4 my-auto">
             <input type="text" id="client-name" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Kunde (z.B. Müller)">
-            <input type="text" id="project-id" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Projekt (z.B. 2024-001)">
+            <input type="text" id="project-id" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Projekt/Datum (z.B. 2024-001)">
             <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl">Kamera starten</button>
         </div>
 
@@ -102,7 +100,7 @@
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} | ${id}`;
             } catch (err) {
-                alert("Kamera-Fehler.");
+                alert("Kamera-Fehler. Bitte HTTPS nutzen.");
             }
         }
 
@@ -118,10 +116,29 @@
 
             const name = document.getElementById('client-name').value;
             const id = document.getElementById('project-id').value;
+            
+            // --- Wasserzeichen & Stempel zeichnen ---
+            
             const fontSize = Math.floor(canvas.width / 25);
             ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 10; ctx.textAlign = "right";
+            ctx.textAlign = "right";
+            
+            // 1. Stempel (Kunde & Projekt) unten rechts
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)"; // Weiß, leicht transparent
+            ctx.shadowColor = "black"; ctx.shadowBlur = 10;
             ctx.fillText(`${name} - ${id}`, canvas.width - 40, canvas.height - 40);
+
+            // 2. OT Wasserzeichen oben rechts
+            ctx.fillStyle = "rgba(100, 150, 255, 0.3)"; // Dezentes Blau, sehr transparent
+            ctx.shadowBlur = 0; // Kein Schatten für das Logo
+            
+            // "OT" zeichnen - stilisierte Buchstaben
+            const otSize = Math.floor(canvas.width / 10);
+            ctx.font = `bold ${otSize}px sans-serif`;
+            ctx.fillText(`OT`, canvas.width - 40, 100); 
+            // Kleines Äskulap-Symbol (simuliert durch Code-Zeichnung)
+            ctx.fillStyle = "rgba(100, 150, 255, 0.2)";
+            ctx.fillRect(canvas.width - 80, 110, 50, 5); // Simulierter Stab
 
             canvas.toBlob((blob) => {
                 const newFile = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
@@ -152,8 +169,8 @@
                 try {
                     await navigator.share({
                         files: photos,
-                        title: `Kostenvoranschlag für ${name} + ${id}`,
-                        text: `Anbei die Fotodokumentation für den Auftrag: ${name} (${id}).`
+                        title: `OT-Dokumentation für ${name} + ${id}`,
+                        text: `Anbei die Fotodokumentation des Sanitätshauses Schmiedel für: ${name} (${id}).`
                     });
                 } catch (e) { }
             }
