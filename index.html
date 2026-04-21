@@ -28,7 +28,7 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.4</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.5</p>
             </div>
         </header>
 
@@ -100,15 +100,34 @@
             const product = document.getElementById('product-info').value;
             const margin = 40;
 
-            // 1. NUR Logo oben rechts (Text entfernt)
+            // --- Wasserzeichen oben rechts (Hintergrund & Logo) ---
             if(logoImg.complete && logoImg.naturalWidth !== 0) {
-                const logoW = canvas.width * 0.18; // Etwas größer, da der Text fehlt
-                const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
-                ctx.shadowBlur = 0;
-                ctx.drawImage(logoImg, canvas.width - logoW - margin, margin, logoW, logoH);
+                const logoW = canvas.width * 0.18; // Logo-Breite
+                const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW; // Proportionale Höhe
+
+                // 1. Hintergrund-Balken (Transparent Grau, Abgerundet)
+                const balkenPadding = 20; // Abstand Logo <-> Balkenrand
+                const balkenW = logoW + (balkenPadding * 2);
+                const balkenH = logoH + (balkenPadding * 2);
+
+                // Balken positionieren (oben rechts)
+                const balkenX = canvas.width - balkenW - margin;
+                const balkenY = margin;
+
+                // Hintergrundfarbe (Transparent Grau)
+                ctx.fillStyle = "rgba(50, 50, 50, 0.75)";
+                ctx.shadowBlur = 0; // Kein Schatten für den Balken
+
+                // Abgerundete Ecken malen
+                roundRect(ctx, balkenX, balkenY, balkenW, balkenH, 15, true, false);
+
+                // 2. Logo mittig im Balken platzieren
+                const logoX = balkenX + balkenPadding;
+                const logoY = balkenY + balkenPadding;
+                ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
             }
 
-            // 2. Foto-Doku Stempel unten rechts
+            // --- Foto-Doku Stempel unten rechts (bleibt neutral) ---
             const fontSize = Math.floor(canvas.width / 45); 
             ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
@@ -119,6 +138,15 @@
                 photos.push(newFile);
                 updateUI();
             }, "image/jpeg", 0.92);
+        }
+
+        // Hilfsfunktion für abgerundete Rechtecke
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            if (typeof radius === 'undefined') { radius = 5; }
+            if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; }
+            else { var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0}; for (var side in defaultRadius) { radius[side] = radius[side] || defaultRadius[side]; } }
+            ctx.beginPath(); ctx.moveTo(x + radius.tl, y); ctx.lineTo(x + width - radius.tr, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr); ctx.lineTo(x + width, y + height - radius.br); ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height); ctx.lineTo(x + radius.bl, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl); ctx.lineTo(x, y + radius.tl); ctx.quadraticCurveTo(x, y, x + radius.tl, y); ctx.closePath();
+            if (fill) { ctx.fill(); } if (stroke) { ctx.stroke(); }
         }
 
         function updateUI() {
