@@ -35,7 +35,7 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.1 (HD-Tuned)</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.2 (Premium HD)</p>
             </div>
         </header>
 
@@ -72,8 +72,8 @@
     <script>
         let photos = [];
         const maxPhotos = 10;
-        const logo = new Image();
-        logo.src = "logo.png"; 
+        const logoIcon = new Image();
+        logoIcon.src = "logo.png"; // Das hochgeladene Symbol
 
         async function initCamera() {
             const name = document.getElementById('client-name').value;
@@ -82,13 +82,12 @@
             if(!name || !dob || !product) return alert("Bitte alle Felder ausfüllen!");
 
             try {
-                // Strengere Anforderungen für Android (Samsung)
+                // HD-Brechstange für Android: Erzwinge 1080p
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: "environment", 
-                        width: { min: 1280, ideal: 1920, max: 2560 },
-                        height: { min: 720, ideal: 1080, max: 1440 },
-                        focusMode: "continuous"
+                        width: { exact: 1920 }, // Exakt 1080p Breite
+                        height: { exact: 1080 } // Exakt 1080p Höhe
                     }, 
                     audio: false 
                 });
@@ -98,7 +97,16 @@
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} - ${dob}`;
-            } catch (err) { alert("Kamera-Fehler"); }
+            } catch (err) { 
+                // Fallback, falls das M33 exakt 1080p verweigert
+                try {
+                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
+                    document.getElementById('video-preview').srcObject = fallbackStream;
+                    document.getElementById('video-preview').play();
+                    document.getElementById('setup-form').classList.add('hidden');
+                    document.getElementById('camera-section').classList.remove('hidden');
+                } catch(e) { alert("Kamera-Fehler: Bitte Full-HD erlauben."); }
+            }
         }
 
         function takePhoto() {
@@ -107,7 +115,7 @@
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Nutze die tatsächliche Video-Auflösung
+            // Setze Canvas exakt auf die gelieferte HD-Auflösung
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
@@ -116,25 +124,55 @@
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
             
-            const fontSize = Math.floor(canvas.width / 40); 
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
-            ctx.fillText(`Foto Doku: ${name} - ${dob} - ${product}`, canvas.width - 40, canvas.height - 40);
+            // --- Wasserzeichen & Stempel zeichnen (Premium Layout) ---
 
-            if(logo.complete && logo.naturalWidth !== 0) {
-                const logoWidth = canvas.width * 0.22;
-                const logoHeight = (logo.naturalHeight / logo.naturalWidth) * logoWidth;
-                ctx.globalAlpha = 0.9;
-                ctx.drawImage(logo, canvas.width - logoWidth - 40, 40, logoWidth, logoHeight);
+            // 1. Firmen-Header oben rechts (Kompakt & Professionell)
+            const headerWidth = canvas.width * 0.4; // 40% der Bildbreite
+            const headerHeight = canvas.height * 0.08; // 8% der Bildhöhe
+            const margin = 40;
+
+            // Hintergrund-Balken (leicht transparentes Grau für edlen Look)
+            ctx.fillStyle = "rgba(50, 50, 50, 0.8)";
+            roundRect(ctx, canvas.width - headerWidth - margin, margin, headerWidth, headerHeight, 15, true, false);
+
+            // OT-Symbol einfügen (links im Balken)
+            if(logoIcon.complete && logoIcon.naturalWidth !== 0) {
+                const iconSize = headerHeight * 0.8;
+                const iconY = margin + (headerHeight - iconSize) / 2;
                 ctx.globalAlpha = 1.0;
+                ctx.drawImage(logoIcon, canvas.width - headerWidth - margin + 20, iconY, iconSize, iconSize);
             }
 
-            // Qualität auf 0.92 (92%) angehoben
+            // Firmenname Text (rechts neben dem Symbol)
+            const textFontSize = Math.floor(headerHeight * 0.4);
+            ctx.font = `bold ${textFontSize}px sans-serif`;
+            ctx.fillStyle = "white"; ctx.textAlign = "left"; ctx.shadowBlur = 0;
+            const textX = canvas.width - headerWidth - margin + headerHeight + 10;
+            const textY = margin + headerHeight / 2 + textFontSize / 3;
+            ctx.fillText("Sanitätshaus Schmiedel - Solingen", textX, textY);
+
+
+            // 2. Foto-Doku Stempel unten rechts (bleibt wie gewünscht)
+            const footerFontSize = Math.floor(canvas.width / 45); 
+            ctx.font = `bold ${footerFontSize}px sans-serif`;
+            ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
+            ctx.fillText(`Foto Doku: ${name} - ${dob} - ${product}`, canvas.width - margin, canvas.height - margin);
+
+            // Premium HD-Kompression: 0.95 (95% Qualität)
             canvas.toBlob((blob) => {
                 const newFile = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
                 photos.push(newFile);
                 updateUI();
-            }, "image/jpeg", 0.92);
+            }, "image/jpeg", 0.95);
+        }
+
+        // Hilfsfunktion für abgerundete Rechtecke
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            if (typeof radius === 'undefined') { radius = 5; }
+            if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; }
+            else { var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0}; for (var side in defaultRadius) { radius[side] = radius[side] || defaultRadius[side]; } }
+            ctx.beginPath(); ctx.moveTo(x + radius.tl, y); ctx.lineTo(x + width - radius.tr, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr); ctx.lineTo(x + width, y + height - radius.br); ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height); ctx.lineTo(x + radius.bl, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl); ctx.lineTo(x, y + radius.tl); ctx.quadraticCurveTo(x, y, x + radius.tl, y); ctx.closePath();
+            if (fill) { ctx.fill(); } if (stroke) { ctx.stroke(); }
         }
 
         function updateUI() {
