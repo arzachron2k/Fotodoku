@@ -11,44 +11,37 @@
         .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex-grow: 1; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         .controls-area { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.5rem; }
-        
         @media (orientation: landscape) {
-            #setup-form { grid-template-columns: repeat(2, 1fr); display: grid; gap: 1rem; align-items: center; max-width: 600px; margin: auto; }
-            #setup-form button { grid-column: span 2; }
+            #setup-form { grid-template-columns: repeat(2, 1fr); display: grid; gap: 1rem; }
             .app-layout { flex-direction: row !important; gap: 1rem; }
             .video-wrapper { width: 60%; }
             .controls-area { width: 40%; }
             header { display: none; }
-            #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: none !important; overflow-y: auto; }
         }
-
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 80px; overflow-y: auto; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
-        video::-webkit-media-controls { display:none !important; }
-        .mail-shortcut { cursor: pointer; transition: transform 0.1s; }
-        .mail-shortcut:active { transform: scale(0.8); }
     </style>
 </head>
 <body class="p-3">
     <div class="max-w-5xl mx-auto h-full flex flex-col app-layout">
         <header class="relative mb-2 flex items-center justify-center flex-shrink-0">
-            <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut">@</div>
+            <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.2 (Premium HD)</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.3</p>
             </div>
         </header>
 
-        <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto flex flex-col">
+        <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
             <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Name, Vorname (Kunde)">
             <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum">
             <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Produkt / Versorgung">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl mt-2">Kamera starten</button>
+            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl">Kamera starten</button>
         </div>
 
         <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
             <div class="video-wrapper">
-                <video id="video-preview" autoplay playsinline webkit-playsinline muted></video>
+                <video id="video-preview" autoplay playsinline muted></video>
                 <div class="absolute bottom-4 left-0 right-0 flex justify-center z-50">
                     <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-2xl active:scale-75 transition-transform">
                         <div class="h-10 w-10 rounded-full border-2 border-black"></div>
@@ -72,41 +65,25 @@
     <script>
         let photos = [];
         const maxPhotos = 10;
-        const logoIcon = new Image();
-        logoIcon.src = "logo.png"; // Das hochgeladene Symbol
+        const logoImg = new Image();
+        logoImg.src = "logo.png"; 
 
         async function initCamera() {
             const name = document.getElementById('client-name').value;
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
-            if(!name || !dob || !product) return alert("Bitte alle Felder ausfüllen!");
+            if(!name || !dob || !product) return alert("Alle Felder füllen!");
 
             try {
-                // HD-Brechstange für Android: Erzwinge 1080p
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: "environment", 
-                        width: { exact: 1920 }, // Exakt 1080p Breite
-                        height: { exact: 1080 } // Exakt 1080p Höhe
-                    }, 
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
                     audio: false 
                 });
-                const video = document.getElementById('video-preview');
-                video.srcObject = stream;
-                video.play();
+                document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} - ${dob}`;
-            } catch (err) { 
-                // Fallback, falls das M33 exakt 1080p verweigert
-                try {
-                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
-                    document.getElementById('video-preview').srcObject = fallbackStream;
-                    document.getElementById('video-preview').play();
-                    document.getElementById('setup-form').classList.add('hidden');
-                    document.getElementById('camera-section').classList.remove('hidden');
-                } catch(e) { alert("Kamera-Fehler: Bitte Full-HD erlauben."); }
-            }
+            } catch (err) { alert("Kamera-Fehler"); }
         }
 
         function takePhoto() {
@@ -114,8 +91,6 @@
             const video = document.getElementById('video-preview');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-            
-            // Setze Canvas exakt auf die gelieferte HD-Auflösung
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
@@ -123,56 +98,33 @@
             const name = document.getElementById('client-name').value;
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
-            
-            // --- Wasserzeichen & Stempel zeichnen (Premium Layout) ---
-
-            // 1. Firmen-Header oben rechts (Kompakt & Professionell)
-            const headerWidth = canvas.width * 0.4; // 40% der Bildbreite
-            const headerHeight = canvas.height * 0.08; // 8% der Bildhöhe
             const margin = 40;
 
-            // Hintergrund-Balken (leicht transparentes Grau für edlen Look)
-            ctx.fillStyle = "rgba(50, 50, 50, 0.8)";
-            roundRect(ctx, canvas.width - headerWidth - margin, margin, headerWidth, headerHeight, 15, true, false);
-
-            // OT-Symbol einfügen (links im Balken)
-            if(logoIcon.complete && logoIcon.naturalWidth !== 0) {
-                const iconSize = headerHeight * 0.8;
-                const iconY = margin + (headerHeight - iconSize) / 2;
-                ctx.globalAlpha = 1.0;
-                ctx.drawImage(logoIcon, canvas.width - headerWidth - margin + 20, iconY, iconSize, iconSize);
+            // 1. Logo & Text oben rechts (Einfach & Sicher)
+            if(logoImg.complete && logoImg.naturalWidth !== 0) {
+                const logoW = canvas.width * 0.15;
+                const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
+                ctx.shadowBlur = 0;
+                ctx.drawImage(logoImg, canvas.width - logoW - margin, margin, logoW, logoH);
+                
+                // Kleiner Text unter dem Logo
+                ctx.font = `bold ${Math.floor(canvas.width / 60)}px sans-serif`;
+                ctx.fillStyle = "white"; ctx.textAlign = "right";
+                ctx.shadowColor = "black"; ctx.shadowBlur = 5;
+                ctx.fillText("Sanitätshaus Schmiedel", canvas.width - margin, margin + logoH + 25);
             }
 
-            // Firmenname Text (rechts neben dem Symbol)
-            const textFontSize = Math.floor(headerHeight * 0.4);
-            ctx.font = `bold ${textFontSize}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.textAlign = "left"; ctx.shadowBlur = 0;
-            const textX = canvas.width - headerWidth - margin + headerHeight + 10;
-            const textY = margin + headerHeight / 2 + textFontSize / 3;
-            ctx.fillText("Sanitätshaus Schmiedel - Solingen", textX, textY);
-
-
-            // 2. Foto-Doku Stempel unten rechts (bleibt wie gewünscht)
-            const footerFontSize = Math.floor(canvas.width / 45); 
-            ctx.font = `bold ${footerFontSize}px sans-serif`;
+            // 2. Foto-Doku Stempel unten rechts
+            const fontSize = Math.floor(canvas.width / 45); 
+            ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
             ctx.fillText(`Foto Doku: ${name} - ${dob} - ${product}`, canvas.width - margin, canvas.height - margin);
 
-            // Premium HD-Kompression: 0.95 (95% Qualität)
             canvas.toBlob((blob) => {
                 const newFile = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
                 photos.push(newFile);
                 updateUI();
-            }, "image/jpeg", 0.95);
-        }
-
-        // Hilfsfunktion für abgerundete Rechtecke
-        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-            if (typeof radius === 'undefined') { radius = 5; }
-            if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; }
-            else { var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0}; for (var side in defaultRadius) { radius[side] = radius[side] || defaultRadius[side]; } }
-            ctx.beginPath(); ctx.moveTo(x + radius.tl, y); ctx.lineTo(x + width - radius.tr, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr); ctx.lineTo(x + width, y + height - radius.br); ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height); ctx.lineTo(x + radius.bl, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl); ctx.lineTo(x, y + radius.tl); ctx.quadraticCurveTo(x, y, x + radius.tl, y); ctx.closePath();
-            if (fill) { ctx.fill(); } if (stroke) { ctx.stroke(); }
+            }, "image/jpeg", 0.92);
         }
 
         function updateUI() {
@@ -193,14 +145,9 @@
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
             const info = `${name} - ${dob} - ${product}`;
-            
             if (navigator.share && photos.length > 0) {
                 try {
-                    await navigator.share({
-                        files: photos,
-                        title: `KV für ${info}`,
-                        text: `Anbei Foto Doku für KV: ${info}`
-                    });
+                    await navigator.share({ files: photos, title: `KV für ${info}`, text: `Anbei Foto Doku für KV: ${info}` });
                 } catch (e) { }
             }
         }
