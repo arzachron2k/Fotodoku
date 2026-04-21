@@ -31,14 +31,14 @@
             <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold mail-shortcut">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.4</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v4.5</p>
             </div>
         </header>
 
         <div id="setup-form" class="space-y-4 my-auto">
             <input type="text" id="client-name" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Kunde">
             <input type="text" id="project-id" class="w-full p-4 rounded bg-gray-800 border border-gray-700" placeholder="Projekt">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg">Kamera starten</button>
+            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-lg">Kamera starten</button>
         </div>
 
         <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
@@ -55,7 +55,7 @@
                     <div class="bg-gray-900/80 p-2 rounded text-[10px] flex-1 truncate border border-gray-700 text-blue-400">
                         <span id="display-info"></span> | <span id="photo-count" class="font-bold">0 / 10</span>
                     </div>
-                    <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden">📤 SENDEN</button>
+                    <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
                 </div>
                 <div id="gallery"></div>
                 <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto">Abbrechen</button>
@@ -68,7 +68,6 @@
         let photos = [];
         const maxPhotos = 10;
         const logo = new Image();
-        // Logo-URL von deiner Webseite (Wichtig: Lädt über GitHub via Proxy oder direkt)
         logo.crossOrigin = "anonymous";
         logo.src = "https://sanitätshaus-schmiedel.de/wp-content/uploads/2016/10/logo_home.png";
 
@@ -100,31 +99,33 @@
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
 
-            // 1. Text-Stempel unten rechts
             const name = document.getElementById('client-name').value;
             const id = document.getElementById('project-id').value;
-            const fontSize = Math.floor(canvas.width / 25);
+            
+            // 1. Text-Stempel unten rechts (Wiederhergestellt)
+            const fontSize = Math.floor(canvas.width / 30);
             ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 10; ctx.textAlign = "right";
-            ctx.fillText(`${name} - ${id}`, canvas.width - 40, canvas.height - 40);
+            ctx.fillStyle = "white"; 
+            ctx.shadowColor = "black"; 
+            ctx.shadowBlur = 8; 
+            ctx.textAlign = "right";
+            ctx.fillText(`Kostenvoranschlag für ${name} - ${id}`, canvas.width - 40, canvas.height - 40);
 
-            // 2. Logo oben rechts einfügen
+            // 2. Logo oben rechts
             if(logo.complete && logo.naturalWidth !== 0) {
-                const logoWidth = canvas.width * 0.2; // 20% der Bildbreite
+                const logoWidth = canvas.width * 0.25;
                 const logoHeight = (logo.naturalHeight / logo.naturalWidth) * logoWidth;
-                ctx.globalAlpha = 0.8; // Leicht transparent
+                ctx.globalAlpha = 0.85;
+                ctx.shadowBlur = 0;
                 ctx.drawImage(logo, canvas.width - logoWidth - 40, 40, logoWidth, logoHeight);
                 ctx.globalAlpha = 1.0;
-            } else {
-                // Fallback falls Logo nicht lädt
-                ctx.fillText("OT-Schmiedel", canvas.width - 40, 80);
             }
 
             canvas.toBlob((blob) => {
                 const newFile = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
                 photos.push(newFile);
                 updateUI();
-            }, "image/jpeg", 0.8);
+            }, "image/jpeg", 0.85);
         }
 
         function updateUI() {
@@ -147,8 +148,8 @@
                 try {
                     await navigator.share({
                         files: photos,
-                        title: `Kostenvoranschlag: ${name}`,
-                        text: `Dokumentation für ${name} (${id}) - Sanitätshaus Schmiedel.`
+                        title: `Kostenvoranschlag für ${name} + ${id}`,
+                        text: `Anbei die Fotodokumentation für den Auftrag: ${name} (${id}).`
                     });
                 } catch (e) { }
             }
