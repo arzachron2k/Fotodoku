@@ -25,10 +25,10 @@
 <body class="p-3">
     <div class="max-w-5xl mx-auto h-full flex flex-col app-layout">
         <header class="relative mb-2 flex items-center justify-center flex-shrink-0">
-            <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2">@</div>
+            <div onclick="sharePhotos()" class="absolute left-0 text-blue-500 text-3xl font-bold p-2 cursor-pointer">@</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.5</p>
+                <p class="text-gray-400 text-[10px]">OT-FotoDokumentation v5.6 (Light Mode)</p>
             </div>
         </header>
 
@@ -73,7 +73,6 @@
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
             if(!name || !dob || !product) return alert("Alle Felder füllen!");
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
@@ -100,34 +99,21 @@
             const product = document.getElementById('product-info').value;
             const margin = 40;
 
-            // --- Wasserzeichen oben rechts (Hintergrund & Logo) ---
             if(logoImg.complete && logoImg.naturalWidth !== 0) {
-                const logoW = canvas.width * 0.18; // Logo-Breite
-                const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW; // Proportionale Höhe
+                const logoW = canvas.width * 0.18;
+                const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
+                const padding = 20;
+                const bW = logoW + (padding * 2);
+                const bH = logoH + (padding * 2);
+                const bX = canvas.width - bW - margin;
+                const bY = margin;
 
-                // 1. Hintergrund-Balken (Transparent Grau, Abgerundet)
-                const balkenPadding = 20; // Abstand Logo <-> Balkenrand
-                const balkenW = logoW + (balkenPadding * 2);
-                const balkenH = logoH + (balkenPadding * 2);
-
-                // Balken positionieren (oben rechts)
-                const balkenX = canvas.width - balkenW - margin;
-                const balkenY = margin;
-
-                // Hintergrundfarbe (Transparent Grau)
-                ctx.fillStyle = "rgba(50, 50, 50, 0.75)";
-                ctx.shadowBlur = 0; // Kein Schatten für den Balken
-
-                // Abgerundete Ecken malen
-                roundRect(ctx, balkenX, balkenY, balkenW, balkenH, 15, true, false);
-
-                // 2. Logo mittig im Balken platzieren
-                const logoX = balkenX + balkenPadding;
-                const logoY = balkenY + balkenPadding;
-                ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+                // HELLER & TRANSPARENTER (45% Deckkraft)
+                ctx.fillStyle = "rgba(100, 100, 100, 0.45)"; 
+                roundRect(ctx, bX, bY, bW, bH, 15, true, false);
+                ctx.drawImage(logoImg, bX + padding, bY + padding, logoW, logoH);
             }
 
-            // --- Foto-Doku Stempel unten rechts (bleibt neutral) ---
             const fontSize = Math.floor(canvas.width / 45); 
             ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
@@ -140,11 +126,9 @@
             }, "image/jpeg", 0.92);
         }
 
-        // Hilfsfunktion für abgerundete Rechtecke
         function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
             if (typeof radius === 'undefined') { radius = 5; }
             if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; }
-            else { var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0}; for (var side in defaultRadius) { radius[side] = radius[side] || defaultRadius[side]; } }
             ctx.beginPath(); ctx.moveTo(x + radius.tl, y); ctx.lineTo(x + width - radius.tr, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr); ctx.lineTo(x + width, y + height - radius.br); ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height); ctx.lineTo(x + radius.bl, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl); ctx.lineTo(x, y + radius.tl); ctx.quadraticCurveTo(x, y, x + radius.tl, y); ctx.closePath();
             if (fill) { ctx.fill(); } if (stroke) { ctx.stroke(); }
         }
