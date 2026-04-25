@@ -11,22 +11,17 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+        body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; display: flex; flex-direction: column; }
         .btn-sh { background-color: #2563eb; }
-        /* Fix für die Sichtbarkeit: Video nimmt nur Restplatz ein */
-        .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex: 1 min-content; }
+        
+        /* Kamera-Bereich: Nimmt den verfügbaren Platz ein, schrumpft aber wenn nötig */
+        .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex: 1 1 auto; min-height: 0; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        .controls-area { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem 0; flex-shrink: 0; }
         
-        @media (orientation: landscape) {
-            #setup-form { grid-template-columns: repeat(2, 1fr); display: grid; gap: 1rem; }
-            .app-layout { flex-direction: row !important; gap: 1rem; }
-            .video-wrapper { width: 60%; }
-            .controls-area { width: 40%; justify-content: center; }
-            header { display: none; }
-        }
+        /* Steuerung am unteren Rand */
+        .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 0 env(safe-area-inset-bottom); }
         
-        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 80px; overflow-y: auto; }
+        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
         select, input { background-color: #1f2937 !important; border: 1px solid #374151 !important; color: white !important; }
@@ -35,13 +30,13 @@
 </head>
 <body class="p-3">
 
-    <header class="relative mb-2 flex items-center justify-between flex-shrink-0 px-2 mt-4">
-        <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
+    <header id="app-header" class="relative flex items-center justify-between flex-shrink-0 px-2 pt-2 mb-2">
+        <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
-            <h1 class="text-xl font-bold text-blue-500 uppercase">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[10px]">OT-Doku v7.4</p>
+            <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
+            <p class="text-gray-400 text-[9px]">OT-Doku v7.5</p>
         </div>
-        <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
+        <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
 
     <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
@@ -52,29 +47,32 @@
         <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase">📸 Kamera starten</button>
     </div>
 
-    <div id="camera-section" class="hidden h-[90vh] flex flex-col app-layout overflow-hidden">
+    <div id="camera-section" class="hidden flex-1 flex flex-col overflow-hidden">
         <div class="video-wrapper">
             <video id="video-preview" autoplay playsinline muted></video>
             <div class="absolute bottom-4 left-0 right-0 flex justify-center z-50">
-                <button onclick="takePhoto()" class="bg-white h-16 w-16 rounded-full border-4 border-blue-500 shadow-2xl active:scale-95 transition-transform flex items-center justify-center">
-                    <div class="h-12 w-12 rounded-full border-2 border-black"></div>
+                <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
+                    <div class="h-10 w-10 rounded-full border-2 border-black"></div>
                 </button>
             </div>
         </div>
 
         <div class="controls-area">
-            <div class="flex justify-between items-center gap-2">
-                <div class="bg-gray-800 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase">
-                    <span id="display-info"></span> | <span id="photo-count" class="font-bold text-white">0 / 10</span>
-                </div>
-                <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg uppercase">📤 Senden</button>
+            <div class="bg-gray-800 p-1.5 rounded text-[10px] flex justify-between border border-gray-700 text-blue-400 uppercase">
+                <span id="display-info" class="truncate mr-2"></span>
+                <span id="photo-count" class="font-bold text-white whitespace-nowrap">0 / 10</span>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="location.reload()" class="flex-1 py-3 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase">
+                    ✕ Abbruch
+                </button>
+                <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-3 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase">
+                    📤 SENDEN
+                </button>
             </div>
             
             <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
-            
-            <button onclick="location.reload()" class="w-full py-3 rounded-xl bg-red-900/30 border border-red-500/50 text-red-400 text-xs font-bold uppercase tracking-widest mt-1">
-                ✕ Vorgang Abbrechen
-            </button>
         </div>
     </div>
 
@@ -93,12 +91,10 @@
     <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
             <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Anleitung</h2>
-            <div class="space-y-4 text-sm text-gray-200">
-                <p><b>1. Start:</b> Mitarbeiter & Kundendaten eingeben.</p>
-                <p><b>2. Kamera:</b> Fotos knipsen (max. 10). Diese werden automatisch gestempelt.</p>
-                <p><b>3. Abschluss:</b> Auf "Senden" klicken und App wählen (Teams/Mail).</p>
+            <div class="space-y-4 text-sm text-gray-200 text-center">
+                <p>1. Kundendaten eingeben.<br>2. Fotos knipsen.<br>3. "Senden" für Teams/Mail.</p>
             </div>
-            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Alles klar!</button>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">OK</button>
         </div>
     </div>
 
@@ -116,7 +112,7 @@
             const adminList = document.getElementById('staff-list-admin');
             const lastStaff = localStorage.getItem('sh_last_staff');
             
-            select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
+            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name; opt.innerText = name;
@@ -152,6 +148,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
+                document.getElementById('app-header').classList.add('hidden'); // Header ausblenden für mehr Platz
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} | ${staff}`;
             } catch (err) { alert("Kamera-Fehler"); }
@@ -178,7 +175,7 @@
             const name = document.getElementById('client-name').value;
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
-            const footer = `Foto Doku für KV ${name} (${dob}) - ${product} - Erstellt von: ${staff}`;
+            const footer = `${name} (${dob}) - ${product} - ${staff}`;
             
             ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
             ctx.fillStyle = "white"; ctx.textAlign = "right";
@@ -198,7 +195,7 @@
             photos.forEach((p, i) => {
                 const div = document.createElement('div');
                 div.className = "thumb-container";
-                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500 shadow-md">`;
+                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500">`;
                 gallery.prepend(div);
             });
             document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
@@ -208,7 +205,7 @@
             const name = document.getElementById('client-name').value;
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
-            const title = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
+            const title = `Doku: ${name} (${dob}) - ${product}`;
             if (navigator.share) {
                 try { await navigator.share({ files: photos, title: title, text: title }); } catch (e) {}
             }
