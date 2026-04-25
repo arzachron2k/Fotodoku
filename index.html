@@ -29,7 +29,7 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v7.8</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v7.9</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -73,9 +73,146 @@
 
     <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Team</h2>
+            <h2 class="text-xl font-bold text-blue-500 mb-4">⚙️ Team</h2>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
             </div>
-            <div id="staff-list-admin" class="space-y-2 max-h
+            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded text-sm"></div>
+            <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold">Schließen</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Anleitung</h2>
+            <div class="space-y-4 text-sm text-gray-200 text-center">
+                <p>1. Kundendaten eingeben.<br>2. Kamera starten.<br>3. Foto knipsen.<br>4. Senden (Teams/E-Mail).</p>
+            </div>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">OK</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        let photos = [];
+        let currentStaff = "";
+        let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
+        const bannerImg = new Image(); bannerImg.src = "banner.png"; 
+
+        // Funktionen für Modals
+        function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
+        function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
+
+        window.onload = () => { renderStaffLists(); };
+
+        function renderStaffLists() {
+            const select = document.getElementById('staff-name');
+            const adminList = document.getElementById('staff-list-admin');
+            const lastStaff = localStorage.getItem('sh_last_staff');
+            
+            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
+            staffList.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name; opt.innerText = name;
+                if(name === lastStaff) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            adminList.innerHTML = "";
+            staffList.forEach((name, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 mb-1";
+                div.innerHTML = `<span>${name}</span><button onclick="removeStaffMember(${index})" class="text-red-500 font-bold px-2">✕</button>`;
+                adminList.appendChild(div);
+            });
+            localStorage.setItem('sh_staff', JSON.stringify(staffList));
+        }
+
+        function saveLastStaff() { localStorage.setItem('sh_last_staff', document.getElementById('staff-name').value); }
+        function addStaffMember() {
+            const input = document.getElementById('new-staff-name');
+            if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
+        }
+        function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
+
+        async function initCamera() {
+            const staffSelect = document.getElementById('staff-name');
+            currentStaff = staffSelect.value;
+            const name = document.getElementById('client-name').value;
+            
+            if(!currentStaff || !name) return alert("Mitarbeiter und Kunde fehlen!");
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
+                document.getElementById('video-preview').srcObject = stream;
+                document.getElementById('setup-form').classList.add('hidden');
+                document.getElementById('camera-section').classList.remove('hidden');
+                document.getElementById('display-info').innerText = `${name} | ${currentStaff}`;
+            } catch (err) { alert("Kamera-Fehler: " + err); }
+        }
+
+        function takePhoto() {
+            if(photos.length >= 10) return;
+            const video = document.getElementById('video-preview');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            // Logo-Stempel
+            if(bannerImg.complete) {
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply"; 
+                const bW = canvas.width * 0.20;
+                const bH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bW;
+                ctx.drawImage(bannerImg, canvas.width - bW - 40, 40, bW, bH);
+                ctx.restore();
+            }
+
+            // Text-Stempel
+            const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            const footer = `${name} (${dob}) - ${product} - ${currentStaff}`;
+            
+            ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
+            ctx.fillStyle = "white"; ctx.textAlign = "right";
+            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
+            ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
+
+            canvas.toBlob((blob) => {
+                const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
+                const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
+                photos.push(file); updateUI();
+            }, "image/jpeg", 0.9);
+        }
+
+        function updateUI() {
+            document.getElementById('photo-count').innerText = `${photos.length} / 10`;
+            const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
+            photos.forEach((p) => {
+                const div = document.createElement('div');
+                div.className = "thumb-container";
+                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500">`;
+                gallery.prepend(div);
+            });
+            document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
+        }
+
+        async function sharePhotos() {
+            const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            const emailSubject = `Für Kostenvoranschlag/Doku, ${name}, ${dob}, ${product}`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ files: photos, title: emailSubject, text: emailSubject });
+                } catch (e) { console.log("Abgebrochen"); }
+            }
+        }
+    </script>
+</body>
+</html>
