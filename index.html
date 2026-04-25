@@ -34,15 +34,15 @@
 <body class="p-3">
 
     <div id="android-install-bar" class="hidden fixed top-0 left-0 right-0 bg-blue-600 p-3 z-[150] flex justify-between items-center shadow-xl border-b border-white/20">
-        <span class="text-xs font-bold">App für schnellen Zugriff installieren?</span>
-        <button onclick="triggerAndroidInstall()" class="bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Installieren</button>
+        <span class="text-xs font-bold">App installieren?</span>
+        <button onclick="triggerAndroidInstall()" class="bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-bold">OK</button>
     </div>
 
     <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Mitarbeiter</h2>
+            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Team-Verwaltung</h2>
             <div class="flex gap-2 mb-4">
-                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
+                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Neuer Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
             </div>
             <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded"></div>
@@ -52,16 +52,13 @@
 
     <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center italic">OT-Doku Hilfe</h2>
+            <h2 class="text-xl font-bold text-blue-500 mb-4">Hilfe</h2>
             <ul class="text-xs space-y-3 text-gray-300">
-                <li>⚙️ <b>Team:</b> Über das Zahnrad Mitarbeiter anlegen.</li>
-                <li>1️⃣ <b>Daten:</b> Wer macht die Fotos? Für welchen Kunden?</li>
-                <li>2️⃣ <b>Fotos:</b> Kamera starten & auslösen (max. 10 Bilder).</li>
-                <li>3️⃣ <b>Check:</b> Bilder bei Bedarf mit <b>✕</b> löschen.</li>
-                <li>4️⃣ <b>Teilen:</b> Über 📤 gesammelt als JPG versenden.</li>
-                <li class="pt-2 border-t border-gray-700 text-blue-400">💡 <b>Tipp:</b> Nutze "Zum Startbildschirm hinzufügen" für echtes App-Gefühl.</li>
+                <li>👤 <b>Mitarbeiter:</b> Die App merkt sich deine letzte Auswahl automatisch.</li>
+                <li>⚙️ <b>Team:</b> Namen im Zahnrad-Menü verwalten.</li>
+                <li>📸 <b>Doku:</b> Starten, knipsen und per 📤 verschicken.</li>
             </ul>
-            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Verstanden</button>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Schließen</button>
         </div>
     </div>
 
@@ -70,19 +67,19 @@
             <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer">⚙️</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-Doku v6.3 (PWA-Optimized)</p>
+                <p class="text-gray-400 text-[10px]">OT-Doku v6.4 (Auto-Select)</p>
             </div>
             <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer">?</div>
         </header>
 
         <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
-            <select id="staff-name" class="w-full p-4 rounded-lg bg-gray-800 border border-blue-500 text-blue-400 font-bold shadow-lg">
-                <option value="" disabled selected>Mitarbeiter wählen...</option>
+            <select id="staff-name" onchange="saveLastStaff()" class="w-full p-4 rounded-lg bg-gray-800 border border-blue-500 text-blue-400 font-bold shadow-lg">
+                <option value="" disabled selected>Wer macht die Bilder?</option>
             </select>
             <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 uppercase" placeholder="Kunde (NAME, Vorname)">
-            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum (DD.MM.YYYY)">
-            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Versorgung / Produkt">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase tracking-wider">Kamera starten</button>
+            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum">
+            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Versorgung">
+            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase">Kamera starten</button>
         </div>
 
         <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
@@ -96,13 +93,13 @@
             </div>
             <div class="controls-area">
                 <div class="flex justify-between items-center gap-2">
-                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase font-mono">
+                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase">
                         <span id="display-info"></span> | <span id="photo-count" class="font-bold text-white">0 / 10</span>
                     </div>
                     <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
                 </div>
                 <div id="gallery"></div>
-                <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase tracking-widest">Abbrechen</button>
+                <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase">Abbrechen</button>
             </div>
         </div>
     </div>
@@ -115,18 +112,16 @@
         const maxPhotos = 10;
         const logoImg = new Image(); logoImg.src = "logo.png"; 
 
-        // ANDROID PWA INSTALL LOGIK
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+            e.preventDefault(); deferredPrompt = e;
             document.getElementById('android-install-bar').classList.remove('hidden');
         });
 
         function triggerAndroidInstall() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choice) => {
-                    if (choice.outcome === 'accepted') document.getElementById('android-install-bar').classList.add('hidden');
+                deferredPrompt.userChoice.then(() => {
+                    document.getElementById('android-install-bar').classList.add('hidden');
                     deferredPrompt = null;
                 });
             }
@@ -137,12 +132,17 @@
         function renderStaffLists() {
             const select = document.getElementById('staff-name');
             const adminList = document.getElementById('staff-list-admin');
-            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
+            const lastStaff = localStorage.getItem('sh_last_staff'); // Letzte Auswahl laden
+            
+            select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name; opt.innerText = name;
+                // Wenn dieser Name der zuletzt gewählte war, vor-auswählen
+                if(name === lastStaff) opt.selected = true;
                 select.appendChild(opt);
             });
+
             adminList.innerHTML = "";
             staffList.forEach((name, index) => {
                 const div = document.createElement('div');
@@ -153,26 +153,37 @@
             localStorage.setItem('sh_staff', JSON.stringify(staffList));
         }
 
+        // Funktion zum Merken der Auswahl
+        function saveLastStaff() {
+            const currentStaff = document.getElementById('staff-name').value;
+            localStorage.setItem('sh_last_staff', currentStaff);
+        }
+
         function addStaffMember() {
             const input = document.getElementById('new-staff-name');
             if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
         }
 
-        function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
+        function removeStaffMember(index) { 
+            const removed = staffList.splice(index, 1);
+            if(localStorage.getItem('sh_last_staff') === removed[0]) localStorage.removeItem('sh_last_staff');
+            renderStaffLists(); 
+        }
+
         function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
         function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
 
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
-            if(!staff || !name) return alert("Mitarbeiter und Kunden-Name sind Pflicht!");
+            if(!staff || !name) return alert("Mitarbeiter und Kunde fehlen!");
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} | ${staff}`;
-            } catch (err) { alert("Kamera-Zugriff verweigert!"); }
+            } catch (err) { alert("Kamera-Fehler"); }
         }
 
         function takePhoto() {
@@ -192,8 +203,7 @@
             if(logoImg.complete && logoImg.naturalWidth !== 0) {
                 const logoW = canvas.width * 0.18;
                 const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
-                const padding = 20;
-                ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; 
+                const padding = 20; ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; 
                 roundRect(ctx, canvas.width - logoW - (padding*2) - margin, margin, logoW + (padding*2), logoH + (padding*2), 15, true);
                 ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
             }
