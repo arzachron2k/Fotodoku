@@ -7,7 +7,7 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22SH-Schmiedel%20Doku%22,%22short_name%22:%22OT-Doku%22,%22display%22:%22standalone%22,%22start_url%22:%22.%22,%22background_color%22:%22%23121212%22,%22theme_color%22:%22%232563eb%22,%22icons%22:[{%22src%22:%22logo.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22,%22purpose%22:%22maskable%20any%22}]}">
+    <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -29,7 +29,7 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v7.9</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v8.0</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -51,22 +51,15 @@
                 </button>
             </div>
         </div>
-
         <div class="controls-area">
             <div class="bg-gray-800 p-1.5 rounded text-[10px] flex justify-between border border-gray-700 text-blue-400 uppercase">
                 <span id="display-info" class="truncate mr-2"></span>
                 <span id="photo-count" class="font-bold text-white whitespace-nowrap">0 / 10</span>
             </div>
-            
             <div class="flex gap-2">
-                <button onclick="location.reload()" class="flex-1 py-3 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase">
-                    ✕ Abbruch
-                </button>
-                <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-3 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase">
-                    📤 SENDEN
-                </button>
+                <button onclick="location.reload()" class="flex-1 py-3 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase">✕ Abbruch</button>
+                <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-3 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase">📤 SENDEN</button>
             </div>
-            
             <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
         </div>
     </div>
@@ -95,124 +88,7 @@
 
     <canvas id="canvas"></canvas>
 
-    <script>
-        let photos = [];
-        let currentStaff = "";
-        let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
-        const bannerImg = new Image(); bannerImg.src = "banner.png"; 
-
-        // Funktionen für Modals
-        function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
-        function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
-
-        window.onload = () => { renderStaffLists(); };
-
-        function renderStaffLists() {
-            const select = document.getElementById('staff-name');
-            const adminList = document.getElementById('staff-list-admin');
-            const lastStaff = localStorage.getItem('sh_last_staff');
-            
-            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
-            staffList.forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name; opt.innerText = name;
-                if(name === lastStaff) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            adminList.innerHTML = "";
-            staffList.forEach((name, index) => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 mb-1";
-                div.innerHTML = `<span>${name}</span><button onclick="removeStaffMember(${index})" class="text-red-500 font-bold px-2">✕</button>`;
-                adminList.appendChild(div);
-            });
-            localStorage.setItem('sh_staff', JSON.stringify(staffList));
-        }
-
-        function saveLastStaff() { localStorage.setItem('sh_last_staff', document.getElementById('staff-name').value); }
-        function addStaffMember() {
-            const input = document.getElementById('new-staff-name');
-            if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
-        }
-        function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
-
-        async function initCamera() {
-            const staffSelect = document.getElementById('staff-name');
-            currentStaff = staffSelect.value;
-            const name = document.getElementById('client-name').value;
-            
-            if(!currentStaff || !name) return alert("Mitarbeiter und Kunde fehlen!");
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
-                document.getElementById('video-preview').srcObject = stream;
-                document.getElementById('setup-form').classList.add('hidden');
-                document.getElementById('camera-section').classList.remove('hidden');
-                document.getElementById('display-info').innerText = `${name} | ${currentStaff}`;
-            } catch (err) { alert("Kamera-Fehler: " + err); }
-        }
-
-        function takePhoto() {
-            if(photos.length >= 10) return;
-            const video = document.getElementById('video-preview');
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-
-            // Logo-Stempel
-            if(bannerImg.complete) {
-                ctx.save();
-                ctx.globalCompositeOperation = "multiply"; 
-                const bW = canvas.width * 0.20;
-                const bH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bW;
-                ctx.drawImage(bannerImg, canvas.width - bW - 40, 40, bW, bH);
-                ctx.restore();
-            }
-
-            // Text-Stempel
-            const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('project-dob').value;
-            const product = document.getElementById('product-info').value;
-            const footer = `${name} (${dob}) - ${product} - ${currentStaff}`;
-            
-            ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.textAlign = "right";
-            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-            ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
-
-            canvas.toBlob((blob) => {
-                const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
-                const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
-                photos.push(file); updateUI();
-            }, "image/jpeg", 0.9);
-        }
-
-        function updateUI() {
-            document.getElementById('photo-count').innerText = `${photos.length} / 10`;
-            const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
-            photos.forEach((p) => {
-                const div = document.createElement('div');
-                div.className = "thumb-container";
-                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500">`;
-                gallery.prepend(div);
-            });
-            document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
-        }
-
-        async function sharePhotos() {
-            const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('project-dob').value;
-            const product = document.getElementById('product-info').value;
-            const emailSubject = `Für Kostenvoranschlag/Doku, ${name}, ${dob}, ${product}`;
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({ files: photos, title: emailSubject, text: emailSubject });
-                } catch (e) { console.log("Abgebrochen"); }
-            }
-        }
-    </script>
+    <script src="ui-controller.js"></script>
+    <script src="camera-engine.js"></script>
 </body>
 </html>
