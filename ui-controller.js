@@ -1,5 +1,6 @@
 /* --- UI & EINSTELLUNGEN LOGIK --- */
 let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"];
+let deferredPrompt; // Speichert den nativen Android-Prompt
 
 function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
 function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
@@ -34,20 +35,28 @@ function addStaffMember() {
 }
 function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
 
-/* --- INSTALL BANNER LOGIK --- */
-function checkInstallBanner() {
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const isDismissed = sessionStorage.getItem('installBannerDismissed');
-    
-    if (!isPWA && !isDismissed) {
-        showBannerUI();
-    }
-}
+/* --- NATIVE INSTALL LOGIK (ANDROID) --- */
 
-// Neue Funktion für den manuellen Aufruf über das Zahnrad
-function forceShowBanner() {
-    showBannerUI();
-    toggleSettings(false); // Einstellungen schließen
+// 1. Android meldet, dass die App installiert werden kann
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Verhindert, dass der Balken sofort von alleine kommt
+    deferredPrompt = e; // Wir merken uns den Balken für später
+    console.log("Android Install Prompt bereit");
+});
+
+// 2. Diese Funktion wird durch den Button im Zahnrad aufgerufen
+async function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt(); // Zeigt den echten Android-Balken an
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`Nutzer Antwort: ${outcome}`);
+        deferredPrompt = null; // Einmal benutzt, dann löschen
+        toggleSettings(false);
+    } else {
+        // Falls Android (oder iOS) den nativen Balken nicht anbietet, zeige unseren blauen Hilfe-Banner
+        showBannerUI();
+        toggleSettings(false);
+    }
 }
 
 function showBannerUI() {
@@ -65,5 +74,8 @@ function closeInstallBanner() {
 
 window.onload = () => { 
     renderStaffLists(); 
-    checkInstallBanner();
+    // Wir prüfen beim Start nur dezent, ob wir den Hilfe-Banner für iOS brauchen
+    if (window.navigator.standalone === false && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        showBannerUI();
+    }
 };
