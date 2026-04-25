@@ -26,14 +26,13 @@
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 90px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
-        /* Fix für Dropdown Pfeil */
         select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
     </style>
 </head>
 <body class="p-3">
 
-    <div id="android-install-bar" class="hidden fixed top-0 left-0 right-0 bg-blue-600 p-3 z-[150] flex justify-between items-center shadow-xl border-b border-white/20">
+    <div id="android-install-bar" class="hidden fixed top-0 left-0 right-0 bg-blue-600 p-3 z-[150] flex justify-between items-center shadow-xl">
         <div class="flex items-center gap-3">
             <button onclick="document.getElementById('android-install-bar').classList.add('hidden')" class="text-white text-xl font-bold px-2">✕</button>
             <span class="text-xs font-bold">App installieren?</span>
@@ -48,20 +47,21 @@
                 <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
             </div>
-            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded"></div>
-            <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold uppercase">Schließen</button>
+            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded text-sm text-gray-200"></div>
+            <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold">Schließen</button>
         </div>
     </div>
 
     <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Hilfe</h2>
-            <ul class="text-xs space-y-3 text-gray-300">
-                <li>👤 <b>Mitarbeiter:</b> Name wird für das nächste Mal gespeichert.</li>
-                <li>⚙️ <b>Team:</b> Über das Zahnrad Kollegen verwalten.</li>
-                <li>📸 <b>Kamera:</b> Starten, Foto machen (max. 10) und senden.</li>
-            </ul>
-            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">OK</button>
+            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Kurzanleitung</h2>
+            <div class="space-y-4 text-sm text-gray-200">
+                <p><b>1. Mitarbeiter:</b> Wähle deinen Namen aus. Die App merkt sich deine Auswahl für das nächste Mal automatisch.</p>
+                <p><b>2. Kundendaten:</b> Gib Kunde, Geburtsdatum und Versorgung ein. Diese Daten werden direkt auf die Bilder gestempelt.</p>
+                <p><b>3. Fotos machen:</b> Klicke auf "Kamera starten". Du kannst bis zu 10 Fotos pro Auftrag aufnehmen.</p>
+                <p><b>4. Senden:</b> Über den Button "📤 SENDEN" kannst du alle Bilder gleichzeitig per WhatsApp, Mail oder Teams teilen.</p>
+            </div>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Alles klar!</button>
         </div>
     </div>
 
@@ -70,7 +70,7 @@
             <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500 uppercase tracking-tight">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-Doku v6.8</p>
+                <p class="text-gray-400 text-[10px]">OT-Doku v6.9</p>
             </div>
             <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
         </header>
@@ -115,9 +115,7 @@
         let deferredPrompt;
         let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
         const maxPhotos = 10;
-        
-        const bannerImg = new Image(); 
-        bannerImg.src = "banner.png"; 
+        const bannerImg = new Image(); bannerImg.src = "banner.png"; 
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); deferredPrompt = e;
@@ -152,7 +150,7 @@
             adminList.innerHTML = "";
             staffList.forEach((name, index) => {
                 const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 text-sm mb-1";
+                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 mb-1";
                 div.innerHTML = `<span>${name}</span><button onclick="removeStaffMember(${index})" class="text-red-500 font-bold px-2">✕</button>`;
                 adminList.appendChild(div);
             });
@@ -176,14 +174,14 @@
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
-            if(!staff || !name) return alert("Bitte Mitarbeiter und Kunde angeben!");
+            if(!staff || !name) return alert("Mitarbeiter und Kunde eingeben!");
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} | ${staff}`;
-            } catch (err) { alert("Kamera konnte nicht gestartet werden."); }
+            } catch (err) { alert("Kamera-Fehler"); }
         }
 
         function takePhoto() {
