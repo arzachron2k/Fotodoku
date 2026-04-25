@@ -13,9 +13,14 @@
     <style>
         body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; display: flex; flex-direction: column; }
         .btn-sh { background-color: #2563eb; }
+        
+        /* Kamera-Bereich: Nimmt den verfügbaren Platz ein, schrumpft aber wenn nötig */
         .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex: 1 1 auto; min-height: 0; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Steuerung am unteren Rand */
         .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 0 env(safe-area-inset-bottom); }
+        
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
@@ -29,7 +34,7 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v7.6</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v7.5</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -106,6 +111,7 @@
             const select = document.getElementById('staff-name');
             const adminList = document.getElementById('staff-list-admin');
             const lastStaff = localStorage.getItem('sh_last_staff');
+            
             select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
@@ -113,6 +119,7 @@
                 if(name === lastStaff) opt.selected = true;
                 select.appendChild(opt);
             });
+
             adminList.innerHTML = "";
             staffList.forEach((name, index) => {
                 const div = document.createElement('div');
@@ -129,18 +136,19 @@
             if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
         }
         function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
+
         function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
         function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
 
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
-            if(!staff || !name) return alert("Daten fehlen!");
+            if(!staff || !name) return alert("Mitarbeiter und Kunde fehlen!");
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
-                document.getElementById('app-header').classList.add('hidden');
+                document.getElementById('app-header').classList.add('hidden'); // Header ausblenden für mehr Platz
                 document.getElementById('camera-section').classList.remove('hidden');
                 document.getElementById('display-info').innerText = `${name} | ${staff}`;
             } catch (err) { alert("Kamera-Fehler"); }
@@ -176,7 +184,6 @@
 
             canvas.toBlob((blob) => {
                 const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
-                // Erhöhte Sicherheit für den Anhang-Modus durch File-Konstruktor
                 const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
                 photos.push(file); updateUI();
             }, "image/jpeg", 0.9);
@@ -195,17 +202,12 @@
         }
 
         async function sharePhotos() {
+            const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            const title = `Doku: ${name} (${dob}) - ${product}`;
             if (navigator.share) {
-                try {
-                    // WICHTIG: Nur 'files' übergeben, kein 'text'. 
-                    // Das zwingt die meisten Mail-Apps dazu, die Dateien als echte Anhänge zu behandeln.
-                    await navigator.share({
-                        files: photos,
-                        title: "Foto-Dokumentation"
-                    });
-                } catch (e) {
-                    console.log("Teilen abgebrochen");
-                }
+                try { await navigator.share({ files: photos, title: title, text: title }); } catch (e) {}
             }
         }
     </script>
