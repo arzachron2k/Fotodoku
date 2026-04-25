@@ -29,7 +29,7 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v7.7</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v7.8</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -71,111 +71,11 @@
         </div>
     </div>
 
-    <canvas id="canvas"></canvas>
-
-    <script>
-        let photos = [];
-        let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
-        const bannerImg = new Image(); bannerImg.src = "banner.png"; 
-
-        window.onload = () => { renderStaffLists(); };
-
-        function renderStaffLists() {
-            const select = document.getElementById('staff-name');
-            const lastStaff = localStorage.getItem('sh_last_staff');
-            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
-            staffList.forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name; opt.innerText = name;
-                if(name === lastStaff) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-
-        function saveLastStaff() { localStorage.setItem('sh_last_staff', document.getElementById('staff-name').value); }
-        
-        async function initCamera() {
-            const staff = document.getElementById('staff-name').value;
-            const name = document.getElementById('client-name').value;
-            if(!staff || !name) return alert("Daten fehlen!");
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
-                document.getElementById('video-preview').srcObject = stream;
-                document.getElementById('setup-form').classList.add('hidden');
-                document.getElementById('app-header').classList.add('hidden');
-                document.getElementById('camera-section').classList.remove('hidden');
-                document.getElementById('display-info').innerText = `${name} | ${staff}`;
-            } catch (err) { alert("Kamera-Fehler"); }
-        }
-
-        function takePhoto() {
-            if(photos.length >= 10) return;
-            const video = document.getElementById('video-preview');
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-
-            if(bannerImg.complete) {
-                ctx.save();
-                ctx.globalCompositeOperation = "multiply"; 
-                const bW = canvas.width * 0.20;
-                const bH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bW;
-                ctx.drawImage(bannerImg, canvas.width - bW - 40, 40, bW, bH);
-                ctx.restore();
-            }
-
-            const staff = document.getElementById('staff-name').value;
-            const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('project-dob').value;
-            const product = document.getElementById('product-info').value;
-            const footer = `${name} (${dob}) - ${product} - ${staff}`;
-            
-            ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
-            ctx.fillStyle = "white"; ctx.textAlign = "right";
-            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-            ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
-
-            canvas.toBlob((blob) => {
-                const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
-                const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
-                photos.push(file); updateUI();
-            }, "image/jpeg", 0.9);
-        }
-
-        function updateUI() {
-            document.getElementById('photo-count').innerText = `${photos.length} / 10`;
-            const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
-            photos.forEach((p, i) => {
-                const div = document.createElement('div');
-                div.className = "thumb-container";
-                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500">`;
-                gallery.prepend(div);
-            });
-            document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
-        }
-
-        async function sharePhotos() {
-            const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('project-dob').value;
-            const product = document.getElementById('product-info').value;
-            
-            // Formatierter Betreff für die E-Mail
-            const emailSubject = `Für Kostenvoranschlag/Doku, ${name}, ${dob}, ${product}`;
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        files: photos,
-                        title: emailSubject,
-                        text: emailSubject // Manche Apps nutzen 'text' für den Betreff bei Dateiteilung
-                    });
-                } catch (e) { console.log("Share failed", e); }
-            }
-        }
-
-        function toggleSettings(show) { /* Admin-Funktionen hier falls nötig */ }
-        function toggleHelp(show) { /* Hilfe-Funktionen hier falls nötig */ }
-    </script>
-</body>
-</html>
+    <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
+        <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Team</h2>
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
+                <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
+            </div>
+            <div id="staff-list-admin" class="space-y-2 max-h
