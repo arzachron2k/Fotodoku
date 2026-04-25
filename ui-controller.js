@@ -36,13 +36,26 @@ function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists
 
 /* --- INSTALL BANNER LOGIK --- */
 function checkInstallBanner() {
-    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const isDismissed = sessionStorage.getItem('installBannerDismissed');
     
-    // Nur anzeigen wenn nicht installiert, auf iOS und nicht manuell geschlossen
-    if (!isStandalone && !isDismissed && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
-        document.getElementById('install-banner').classList.remove('hidden');
+    if (!isPWA && !isDismissed) {
+        showBannerUI();
     }
+}
+
+// Neue Funktion für den manuellen Aufruf über das Zahnrad
+function forceShowBanner() {
+    showBannerUI();
+    toggleSettings(false); // Einstellungen schließen
+}
+
+function showBannerUI() {
+    const banner = document.getElementById('install-banner');
+    if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        banner.querySelector('p:last-child').innerHTML = 'Tippe auf die <strong>drei Punkte ⋮</strong><br>und dann auf <strong>"App installieren"</strong>';
+    }
+    banner.classList.remove('hidden');
 }
 
 function closeInstallBanner() {
@@ -50,7 +63,6 @@ function closeInstallBanner() {
     sessionStorage.setItem('installBannerDismissed', 'true');
 }
 
-// Start-Aufruf
 window.onload = () => { 
     renderStaffLists(); 
     checkInstallBanner();
