@@ -26,155 +26,97 @@
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 90px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
-        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        select, input { background-color: #1f2937 !important; border: 1px solid #374151 !important; color: white !important; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
     </style>
 </head>
 <body class="p-3">
 
-    <div id="android-install-bar" class="hidden fixed top-0 left-0 right-0 bg-blue-600 p-3 z-[150] flex justify-between items-center shadow-xl">
-        <div class="flex items-center gap-3">
-            <button onclick="document.getElementById('android-install-bar').classList.add('hidden')" class="text-white text-xl font-bold px-2">✕</button>
-            <span class="text-xs font-bold">App installieren?</span>
+    <header class="relative mb-2 flex items-center justify-between flex-shrink-0 px-2 mt-4">
+        <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
+        <div class="text-center">
+            <h1 class="text-xl font-bold text-blue-500 uppercase">SH-Schmiedel</h1>
+            <p class="text-gray-400 text-[10px]">OT-Doku v7.1</p>
         </div>
-        <button onclick="triggerAndroidInstall()" class="bg-white text-blue-600 px-4 py-1 rounded-full text-xs font-bold">OK</button>
+        <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
+    </header>
+
+    <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
+        <select id="staff-name" onchange="saveLastStaff()" class="w-full p-4 rounded-lg font-bold shadow-lg">
+            <option value="" disabled selected>Mitarbeiter wählen...</option>
+        </select>
+        <input type="text" id="client-name" class="w-full p-4 rounded-lg uppercase" placeholder="Kunde (NAME, Vorname)">
+        <input type="text" id="project-dob" class="w-full p-4 rounded-lg" placeholder="Geburtsdatum">
+        <input type="text" id="product-info" class="w-full p-4 rounded-lg" placeholder="Versorgung / Produkt">
+        
+        <div class="flex items-center gap-2 p-2 bg-gray-800 rounded-lg border border-gray-700">
+            <input type="checkbox" id="mail-mode" class="w-5 h-5">
+            <label for="mail-mode" class="text-xs text-gray-300 italic">E-Mail Modus (Echte Anhänge erzwingen)</label>
+        </div>
+
+        <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase">📸 Kamera starten</button>
     </div>
 
-    <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
-        <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Team-Verwaltung</h2>
-            <div class="flex gap-2 mb-4">
-                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
-                <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
+    <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
+        <div class="video-wrapper">
+            <video id="video-preview" autoplay playsinline muted></video>
+            <div class="absolute bottom-4 left-0 right-0 flex justify-center z-50">
+                <button onclick="takePhoto()" class="bg-white h-16 w-16 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
+                    <div class="h-12 w-12 rounded-full border-2 border-black"></div>
+                </button>
             </div>
-            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded text-sm text-gray-200"></div>
-            <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold">Schließen</button>
+        </div>
+        <div class="controls-area">
+            <div class="flex justify-between items-center gap-2">
+                <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase">
+                    <span id="display-info"></span> | <span id="photo-count" class="font-bold text-white">0 / 10</span>
+                </div>
+                <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
+            </div>
+            <div id="gallery"></div>
+            <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase">Abbrechen</button>
         </div>
     </div>
 
     <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
-        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Kurzanleitung</h2>
-            <div class="space-y-4 text-sm text-gray-200">
-                <p><b>1. Mitarbeiter:</b> Wähle deinen Namen aus. Die App merkt sich deine Auswahl.</p>
-                <p><b>2. Kundendaten:</b> Gib Kunde, Geburtsdatum und Versorgung ein.</p>
-                <p><b>3. Fotos machen:</b> Klicke auf "Kamera starten". Max. 10 Fotos möglich.</p>
-                <p><b>4. Senden:</b> Der Betreff "Foto Doku für KV..." wird automatisch erstellt.</p>
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold text-blue-500 mb-4">Anleitung</h2>
+            <div class="text-sm space-y-3">
+                <p>1. Daten eingeben.<br>2. <b>E-Mail Modus:</b> Aktivieren, falls Teams/WhatsApp die Bilder nicht als Anhang senden.<br>3. Fotos machen & Senden.</p>
             </div>
-            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Alles klar!</button>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-4 py-2 rounded-lg">OK</button>
         </div>
     </div>
 
-    <div class="max-w-5xl mx-auto h-full flex flex-col app-layout">
-        <header class="relative mb-2 flex items-center justify-between flex-shrink-0 px-2 mt-4">
-            <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
-            <div class="text-center">
-                <h1 class="text-xl font-bold text-blue-500 uppercase tracking-tight">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-Doku v7.0</p>
-            </div>
-            <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
-        </header>
-
-        <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
-            <select id="staff-name" onchange="saveLastStaff()" class="w-full p-4 rounded-lg bg-gray-800 border border-blue-500 text-blue-400 font-bold shadow-lg">
-                <option value="" disabled selected>Wer macht die Bilder?</option>
-            </select>
-            <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 uppercase" placeholder="Kunde (NAME, Vorname)">
-            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum">
-            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Versorgung / Produkt">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase flex items-center justify-center gap-2">
-                <span>📸</span> Kamera starten
-            </button>
-        </div>
-
-        <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
-            <div class="video-wrapper">
-                <video id="video-preview" autoplay playsinline muted></video>
-                <div class="absolute bottom-4 left-0 right-0 flex justify-center z-50">
-                    <button onclick="takePhoto()" class="bg-white h-16 w-16 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
-                        <div class="h-12 w-12 rounded-full border-2 border-black"></div>
-                    </button>
-                </div>
-            </div>
-            <div class="controls-area">
-                <div class="flex justify-between items-center gap-2">
-                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase">
-                        <span id="display-info"></span> | <span id="photo-count" class="font-bold text-white">0 / 10</span>
-                    </div>
-                    <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
-                </div>
-                <div id="gallery"></div>
-                <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase">Abbrechen</button>
-            </div>
-        </div>
-    </div>
     <canvas id="canvas"></canvas>
 
     <script>
         let photos = [];
-        let deferredPrompt;
         let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
-        const maxPhotos = 10;
         const bannerImg = new Image(); bannerImg.src = "banner.png"; 
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e;
-            document.getElementById('android-install-bar').classList.remove('hidden');
-        });
-
-        function triggerAndroidInstall() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    document.getElementById('android-install-bar').classList.add('hidden');
-                    deferredPrompt = null;
-                });
-            }
-        }
 
         window.onload = () => { renderStaffLists(); };
 
         function renderStaffLists() {
             const select = document.getElementById('staff-name');
-            const adminList = document.getElementById('staff-list-admin');
             const lastStaff = localStorage.getItem('sh_last_staff');
-            select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
+            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name; opt.innerText = name;
                 if(name === lastStaff) opt.selected = true;
                 select.appendChild(opt);
             });
-            adminList.innerHTML = "";
-            staffList.forEach((name, index) => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 mb-1";
-                div.innerHTML = `<span>${name}</span><button onclick="removeStaffMember(${index})" class="text-red-500 font-bold px-2">✕</button>`;
-                adminList.appendChild(div);
-            });
-            localStorage.setItem('sh_staff', JSON.stringify(staffList));
         }
 
         function saveLastStaff() { localStorage.setItem('sh_last_staff', document.getElementById('staff-name').value); }
-        function addStaffMember() {
-            const input = document.getElementById('new-staff-name');
-            if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
-        }
-        function removeStaffMember(index) { 
-            const removed = staffList.splice(index, 1);
-            if(localStorage.getItem('sh_last_staff') === removed[0]) localStorage.removeItem('sh_last_staff');
-            renderStaffLists(); 
-        }
-
-        function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
-        function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
 
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
             if(!staff || !name) return alert("Mitarbeiter und Kunde eingeben!");
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
@@ -183,72 +125,71 @@
         }
 
         function takePhoto() {
-            if(photos.length >= maxPhotos) return;
+            if(photos.length >= 10) return;
             const video = document.getElementById('video-preview');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
 
+            // DER TRICK: Transparent-Modus für das Logo
+            if(bannerImg.complete) {
+                ctx.save();
+                ctx.globalCompositeOperation = "multiply"; // Blendet Weiß aus
+                const bW = canvas.width * 0.20;
+                const bH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bW;
+                ctx.drawImage(bannerImg, canvas.width - bW - 40, 40, bW, bH);
+                ctx.restore();
+            }
+
+            // Textstempel
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
             const dob = document.getElementById('project-dob').value;
             const product = document.getElementById('product-info').value;
-
-            if(bannerImg.complete && bannerImg.naturalWidth !== 0) {
-                const bannerW = canvas.width * 0.25;
-                const bannerH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bannerW;
-                ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-                roundRect(ctx, canvas.width - bannerW - 60, 20, bannerW + 40, bannerH + 40, 10, true);
-                ctx.drawImage(bannerImg, canvas.width - bannerW - 40, 40, bannerW, bannerH);
-            }
-
-            const fontSize = Math.floor(canvas.width / 50); 
-            ctx.font = `bold ${fontSize}px sans-serif`; ctx.fillStyle = "white"; ctx.textAlign = "right";
-            ctx.shadowColor = "black"; ctx.shadowBlur = 5;
-            ctx.fillText(`${name} (${dob}) - ${product} - ${staff}`, canvas.width - 40, canvas.height - 40);
+            const footer = `Foto Doku für KV ${name} (${dob}) - ${product} - Erstellt von: ${staff}`;
+            
+            ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
+            ctx.fillStyle = "white"; ctx.textAlign = "right";
+            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
+            ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
 
             canvas.toBlob((blob) => {
-                const file = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
+                const fileName = `DOKU_${name.replace(/\s/g,'_')}_${photos.length+1}.jpg`;
+                const file = new File([blob], fileName, { type: "image/jpeg" });
                 photos.push(file); updateUI();
-            }, "image/jpeg", 0.85);
+            }, "image/jpeg", 0.9);
         }
 
         function updateUI() {
-            document.getElementById('photo-count').innerText = `${photos.length} / ${maxPhotos}`;
+            document.getElementById('photo-count').innerText = `${photos.length} / 10`;
             const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
             photos.forEach((p, i) => {
                 const div = document.createElement('div');
                 div.className = "thumb-container";
-                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500 shadow-md"><div onclick="photos.splice(${i},1);updateUI()" class="absolute -top-1 -right-1 bg-red-600 w-6 h-6 rounded-full flex items-center justify-center text-white text-[12px] font-bold shadow-lg">✕</div>`;
+                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500 shadow-md">`;
                 gallery.prepend(div);
             });
             document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
         }
 
-        function roundRect(ctx, x, y, w, h, r, fill) {
-            ctx.beginPath(); ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r); ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.closePath();
-            if(fill) ctx.fill();
-        }
-
         async function sharePhotos() {
-            if (navigator.share) {
-                const name = document.getElementById('client-name').value;
-                const dob = document.getElementById('project-dob').value;
-                const product = document.getElementById('product-info').value;
-                
-                // Dynamischer Betreff / Titel für das Teilen
-                const shareTitle = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
-                
-                try { 
-                    await navigator.share({ 
-                        files: photos, 
-                        title: shareTitle,
-                        text: shareTitle 
-                    }); 
-                } catch (e) {}
+            const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            const title = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
+
+            if (document.getElementById('mail-mode').checked) {
+                // FALLBACK MAIL (Bessere Anhänge)
+                window.location.href = `mailto:?subject=${encodeURIComponent(title)}&body=Anbei die Dokumentation.`;
+                alert("Bilder bitte im Mail-Programm manuell anhängen (Browser-Sicherheit).");
+            } else if (navigator.share) {
+                try { await navigator.share({ files: photos, title: title, text: title }); } catch (e) {}
             }
         }
+
+        function toggleSettings(s) { /* Wie vorher */ }
+        function toggleHelp(s) { document.getElementById('help-modal').style.display = s ? 'flex' : 'none'; }
     </script>
 </body>
 </html>
