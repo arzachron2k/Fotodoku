@@ -7,7 +7,8 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22SH-Schmiedel%20Doku%22,%22short_name%22:%22OT-Doku%22,%22display%22:%22standalone%22,%22start_url%22:%22.%22,%22background_color%22:%22%23121212%22,%22theme_color%22:%22%232563eb%22,%22icons%22:[{%22src%22:%22logo.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,7 +18,6 @@
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 0 env(safe-area-inset-bottom); }
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
-        .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
         select, input { background-color: #1f2937 !important; border: 1px solid #374151 !important; color: white !important; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
@@ -30,7 +30,7 @@
             <span class="text-2xl">📲</span>
             <div class="text-[11px] leading-tight">
                 <p class="font-bold">App installieren</p>
-                <p>Tippe auf <span class="bg-white/20 px-1 rounded">Teilen ⎋</span> und dann auf <br><strong>"Zum Home-Bildschirm"</strong></p>
+                <p>Tippe auf <span class="bg-white/20 px-1 rounded">Teilen ⎋</span> oder <span class="bg-white/20 px-1 rounded">⋮</span><br>und dann auf <strong>"Zum Home-Bildschirm"</strong></p>
             </div>
         </div>
         <button onclick="closeInstallBanner()" class="bg-black/20 h-8 w-8 rounded-full font-bold">✕</button>
@@ -40,7 +40,7 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v8.4</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v8.5</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -77,13 +77,13 @@
 
     <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-2 uppercase">⚙️ Team</h2>
+            <h2 class="text-xl font-bold text-blue-500 mb-2 uppercase text-center">⚙️ Team</h2>
             
-            <button onclick="installApp()" class="w-full mb-6 bg-blue-900/30 border border-blue-500 text-blue-400 py-2 rounded-lg text-[10px] font-bold uppercase">
-                📲 App installieren / Hilfe
+            <button onclick="installApp()" class="w-full mb-6 bg-blue-900/30 border border-blue-500 text-blue-400 py-3 rounded-xl text-[11px] font-bold uppercase shadow-inner">
+                📲 App installieren (Chrome/Safari)
             </button>
 
-            <p class="text-[11px] text-gray-400 mb-2">Mitarbeiter verwalten:</p>
+            <p class="text-[11px] text-gray-400 mb-2 uppercase tracking-wider text-center">Mitarbeiter verwalten</p>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
@@ -98,11 +98,11 @@
             <h2 class="text-xl font-bold text-blue-500 mb-4 text-center uppercase">So geht's:</h2>
             <div class="space-y-4 text-sm text-gray-200">
                 <p><strong>1. Daten eingeben:</strong> Mitarbeiter wählen und Kundendaten eintragen.</p>
-                <p><strong>2. Kamera:</strong> Tippe auf "Kamera starten". Logo und Daten werden automatisch gestempelt.</p>
-                <p><strong>3. Fotos machen:</strong> Drücke den weißen Auslöser (max. 10 Bilder).</p>
-                <p><strong>4. Senden:</strong> Über "Senden" werden die Bilder an Teams/E-Mail verschickt.</p>
+                <p><strong>2. Kamera:</strong> Auf "Kamera starten" tippen.</p>
+                <p><strong>3. Fotos machen:</strong> Den weißen Auslöser drücken (max. 10 Bilder).</p>
+                <p><strong>4. Senden:</strong> Über den blauen "Senden"-Button die Bilder verschicken.</p>
                 <hr class="border-gray-700">
-                <p class="text-[12px] text-gray-400 italic text-center">Über das <strong>Zahnrad</strong> verwaltest du das Team und die Installation.</p>
+                <p class="text-[12px] text-gray-400 italic text-center">Einstellungen und App-Installation findest du unter dem <strong>Zahnrad</strong>.</p>
             </div>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold uppercase">VERSTANDEN</button>
         </div>
