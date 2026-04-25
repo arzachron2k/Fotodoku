@@ -36,15 +36,14 @@
         <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
         <div class="text-center">
             <h1 class="text-xl font-bold text-blue-500 uppercase">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[10px]">OT-Doku v7.2</p>
+            <p class="text-gray-400 text-[10px]">OT-Doku v7.3</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
     </header>
 
     <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
         <select id="staff-name" onchange="saveLastStaff()" class="w-full p-4 rounded-lg font-bold shadow-lg">
-            <option value="" disabled selected>Mitarbeiter wählen...</option>
-        </select>
+            </select>
         <input type="text" id="client-name" class="w-full p-4 rounded-lg uppercase" placeholder="Kunde (NAME, Vorname)">
         <input type="text" id="project-dob" class="w-full p-4 rounded-lg" placeholder="Geburtsdatum">
         <input type="text" id="product-info" class="w-full p-4 rounded-lg" placeholder="Versorgung / Produkt">
@@ -68,7 +67,32 @@
                 <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
             </div>
             <div id="gallery"></div>
-            <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase">Abbrechen</button>
+            <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase">Abbrechen / Neu</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
+        <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Team</h2>
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
+                <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
+            </div>
+            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded text-sm text-gray-200"></div>
+            <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold">Schließen</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Anleitung</h2>
+            <div class="space-y-4 text-sm text-gray-200">
+                <p><b>1. Mitarbeiter:</b> Wähle deinen Namen aus.</p>
+                <p><b>2. Kundendaten:</b> Gib Kunde, Geburtsdatum und Versorgung ein.</p>
+                <p><b>3. Fotos:</b> "Kamera starten" und Fotos machen (max. 10).</p>
+                <p><b>4. Senden:</b> Über "📤 SENDEN" an Teams/Mail teilen.</p>
+            </div>
+            <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Verstanden</button>
         </div>
     </div>
 
@@ -83,17 +107,41 @@
 
         function renderStaffLists() {
             const select = document.getElementById('staff-name');
+            const adminList = document.getElementById('staff-list-admin');
             const lastStaff = localStorage.getItem('sh_last_staff');
-            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
+            
+            select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name; opt.innerText = name;
                 if(name === lastStaff) opt.selected = true;
                 select.appendChild(opt);
             });
+
+            adminList.innerHTML = "";
+            staffList.forEach((name, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-900 p-2 rounded border border-gray-700 mb-1";
+                div.innerHTML = `<span>${name}</span><button onclick="removeStaffMember(${index})" class="text-red-500 font-bold px-2">✕</button>`;
+                adminList.appendChild(div);
+            });
+            localStorage.setItem('sh_staff', JSON.stringify(staffList));
         }
 
         function saveLastStaff() { localStorage.setItem('sh_last_staff', document.getElementById('staff-name').value); }
+        
+        function addStaffMember() {
+            const input = document.getElementById('new-staff-name');
+            if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
+        }
+
+        function removeStaffMember(index) { 
+            staffList.splice(index, 1);
+            renderStaffLists(); 
+        }
+
+        function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
+        function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
 
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
@@ -116,6 +164,7 @@
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
 
+            // Transparenz-Trick für das Logo
             if(bannerImg.complete) {
                 ctx.save();
                 ctx.globalCompositeOperation = "multiply"; 
@@ -137,8 +186,7 @@
             ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
 
             canvas.toBlob((blob) => {
-                // Vereinfachter Dateiname ohne Sonderzeichen für besseren Support
-                const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,20);
+                const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
                 const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
                 photos.push(file); updateUI();
             }, "image/jpeg", 0.9);
@@ -157,26 +205,15 @@
         }
 
         async function sharePhotos() {
+            const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('project-dob').value;
+            const product = document.getElementById('product-info').value;
+            const title = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
+            
             if (navigator.share) {
-                const name = document.getElementById('client-name').value;
-                const dob = document.getElementById('project-dob').value;
-                const product = document.getElementById('product-info').value;
-                const title = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
-                
-                try { 
-                    await navigator.share({ 
-                        files: photos, 
-                        title: title,
-                        text: title 
-                    }); 
-                } catch (e) {
-                    console.log("Teilen fehlgeschlagen", e);
-                }
+                try { await navigator.share({ files: photos, title: title, text: title }); } catch (e) {}
             }
         }
-
-        function toggleSettings(s) { /* Bleibt gleich */ }
-        function toggleHelp(s) { /* Bleibt gleich */ }
     </script>
 </body>
 </html>
