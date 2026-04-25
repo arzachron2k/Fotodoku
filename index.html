@@ -56,10 +56,10 @@
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
             <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">Kurzanleitung</h2>
             <div class="space-y-4 text-sm text-gray-200">
-                <p><b>1. Mitarbeiter:</b> Wähle deinen Namen aus. Die App merkt sich deine Auswahl für das nächste Mal automatisch.</p>
-                <p><b>2. Kundendaten:</b> Gib Kunde, Geburtsdatum und Versorgung ein. Diese Daten werden direkt auf die Bilder gestempelt.</p>
-                <p><b>3. Fotos machen:</b> Klicke auf "Kamera starten". Du kannst bis zu 10 Fotos pro Auftrag aufnehmen.</p>
-                <p><b>4. Senden:</b> Über den Button "📤 SENDEN" kannst du alle Bilder gleichzeitig per WhatsApp, Mail oder Teams teilen.</p>
+                <p><b>1. Mitarbeiter:</b> Wähle deinen Namen aus. Die App merkt sich deine Auswahl.</p>
+                <p><b>2. Kundendaten:</b> Gib Kunde, Geburtsdatum und Versorgung ein.</p>
+                <p><b>3. Fotos machen:</b> Klicke auf "Kamera starten". Max. 10 Fotos möglich.</p>
+                <p><b>4. Senden:</b> Der Betreff "Foto Doku für KV..." wird automatisch erstellt.</p>
             </div>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Alles klar!</button>
         </div>
@@ -70,7 +70,7 @@
             <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer p-2">⚙️</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500 uppercase tracking-tight">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-Doku v6.9</p>
+                <p class="text-gray-400 text-[10px]">OT-Doku v7.0</p>
             </div>
             <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer p-2">?</div>
         </header>
@@ -138,7 +138,6 @@
             const select = document.getElementById('staff-name');
             const adminList = document.getElementById('staff-list-admin');
             const lastStaff = localStorage.getItem('sh_last_staff');
-            
             select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
@@ -146,7 +145,6 @@
                 if(name === lastStaff) opt.selected = true;
                 select.appendChild(opt);
             });
-
             adminList.innerHTML = "";
             staffList.forEach((name, index) => {
                 const div = document.createElement('div');
@@ -235,7 +233,20 @@
 
         async function sharePhotos() {
             if (navigator.share) {
-                try { await navigator.share({ files: photos, title: 'OT-Doku' }); } catch (e) {}
+                const name = document.getElementById('client-name').value;
+                const dob = document.getElementById('project-dob').value;
+                const product = document.getElementById('product-info').value;
+                
+                // Dynamischer Betreff / Titel für das Teilen
+                const shareTitle = `Foto Doku für KV ${name}, geb. ${dob}, ${product}`;
+                
+                try { 
+                    await navigator.share({ 
+                        files: photos, 
+                        title: shareTitle,
+                        text: shareTitle 
+                    }); 
+                } catch (e) {}
             }
         }
     </script>
