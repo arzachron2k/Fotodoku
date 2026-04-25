@@ -25,11 +25,22 @@
 </head>
 <body class="p-3">
 
+    <div id="install-banner" class="hidden bg-blue-600 m-2 p-3 rounded-xl flex items-center justify-between shadow-2xl border border-blue-400 z-[200]">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📲</span>
+            <div class="text-[11px] leading-tight">
+                <p class="font-bold">App installieren</p>
+                <p>Tippe auf <span class="bg-white/20 px-1 rounded">Teilen ⎋</span> und dann auf <br><strong>"Zum Home-Bildschirm"</strong></p>
+            </div>
+        </div>
+        <button onclick="closeInstallBanner()" class="bg-black/20 h-8 w-8 rounded-full font-bold">✕</button>
+    </div>
+
     <header id="app-header" class="relative flex items-center justify-between flex-shrink-0 px-2 pt-2 mb-2">
         <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-3">⚙️</div>
         <div class="text-center">
             <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v8.1</p>
+            <p class="text-gray-400 text-[9px]">OT-Doku v8.2</p>
         </div>
         <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-3">?</div>
     </header>
@@ -67,7 +78,7 @@
     <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
             <h2 class="text-xl font-bold text-blue-500 mb-4">⚙️ Team-Verwaltung</h2>
-            <p class="text-[11px] text-gray-400 mb-4">Hier kannst du neue Mitarbeiter zur Auswahl hinzufügen oder löschen.</p>
+            <p class="text-[11px] text-gray-400 mb-4">Hier kannst du Mitarbeiter hinzufügen oder löschen.</p>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
@@ -81,12 +92,12 @@
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
             <h2 class="text-xl font-bold text-blue-500 mb-4 text-center">SO GEHT'S:</h2>
             <div class="space-y-4 text-sm text-gray-200">
-                <p><strong>1. Daten eingeben:</strong> Wähle dich als Mitarbeiter aus und trage die Kundendaten ein.</p>
-                <p><strong>2. Kamera:</strong> Tippe auf "Kamera starten". Die App stempelt das Logo und die Daten automatisch auf jedes Foto.</p>
-                <p><strong>3. Fotos machen:</strong> Drücke den weißen Auslöser. Du kannst bis zu 10 Bilder pro Vorgang machen.</p>
-                <p><strong>4. Senden:</strong> Über den blauen "Senden"-Button werden die Bilder als Anhang an Teams oder per E-Mail verschickt.</p>
+                <p><strong>1. Daten eingeben:</strong> Mitarbeiter wählen und Kundendaten eintragen.</p>
+                <p><strong>2. Kamera:</strong> Tippe auf "Kamera starten". Logo und Daten werden automatisch auf jedes Foto gestempelt.</p>
+                <p><strong>3. Fotos machen:</strong> Drücke den weißen Auslöser (max. 10 Bilder).</p>
+                <p><strong>4. Senden:</strong> Über "Senden" werden die Bilder an Teams oder per E-Mail verschickt.</p>
                 <hr class="border-gray-700">
-                <p class="text-[12px] text-gray-400 italic">Über das <strong>Zahnrad-Symbol</strong> oben links kannst du die Liste der Mitarbeiter verwalten (Namen hinzufügen/entfernen).</p>
+                <p class="text-[12px] text-gray-400 italic">Über das <strong>Zahnrad</strong> oben links verwaltest du die Mitarbeiterliste.</p>
             </div>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold uppercase">VERSTANDEN</button>
         </div>

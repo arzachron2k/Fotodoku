@@ -34,5 +34,24 @@ function addStaffMember() {
 }
 function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
 
+/* --- INSTALL BANNER LOGIK --- */
+function checkInstallBanner() {
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isDismissed = sessionStorage.getItem('installBannerDismissed');
+    
+    // Nur anzeigen wenn nicht installiert, auf iOS und nicht manuell geschlossen
+    if (!isStandalone && !isDismissed && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        document.getElementById('install-banner').classList.remove('hidden');
+    }
+}
+
+function closeInstallBanner() {
+    document.getElementById('install-banner').classList.add('hidden');
+    sessionStorage.setItem('installBannerDismissed', 'true');
+}
+
 // Start-Aufruf
-window.onload = () => { renderStaffLists(); };
+window.onload = () => { 
+    renderStaffLists(); 
+    checkInstallBanner();
+};
