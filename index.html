@@ -8,7 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OT-Doku">
-    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22SH-Schmiedel%20Doku%22,%22short_name%22:%22OT-Doku%22,%22display%22:%22standalone%22,%22start_url%22:%22.%22,%22background_color%22:%22%23121212%22,%22theme_color%22:%22%232563eb%22,%22icons%22:[{%22src%22:%22logo.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; }
@@ -26,77 +27,82 @@
         #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 90px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
-        
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
         select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
     </style>
 </head>
 <body class="p-3">
 
+    <div id="android-install-bar" class="hidden fixed top-0 left-0 right-0 bg-blue-600 p-3 z-[150] flex justify-between items-center shadow-xl border-b border-white/20">
+        <span class="text-xs font-bold">App für schnellen Zugriff installieren?</span>
+        <button onclick="triggerAndroidInstall()" class="bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Installieren</button>
+    </div>
+
     <div id="settings-modal" class="modal-overlay" onclick="toggleSettings(false)">
         <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Mitarbeiter-Liste</h2>
+            <h2 class="text-xl font-bold text-blue-500 mb-4 flex items-center gap-2">⚙️ Mitarbeiter</h2>
             <div class="flex gap-2 mb-4">
-                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name eingeben">
+                <input type="text" id="new-staff-name" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-sm" placeholder="Name">
                 <button onclick="addStaffMember()" class="bg-blue-600 px-4 py-2 rounded font-bold">+</button>
             </div>
-            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded">
-                </div>
+            <div id="staff-list-admin" class="space-y-2 max-h-48 overflow-y-auto mb-4 bg-gray-900 p-2 rounded"></div>
             <button onclick="toggleSettings(false)" class="w-full bg-gray-700 py-3 rounded-xl font-bold">Schließen</button>
         </div>
     </div>
 
     <div id="help-modal" class="modal-overlay" onclick="toggleHelp(false)">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold text-blue-500 mb-4">Bedienungshilfe</h2>
-            <ul class="text-sm space-y-3 text-gray-300">
-                <li>⚙️ <b>Zahnrad:</b> Hier kannst du Namen deiner Kollegen speichern.</li>
-                <li>👤 <b>Mitarbeiter:</b> Wähle dich aus der Liste aus.</li>
-                <li>📸 <b>Doku:</b> Daten eingeben, knipsen und per 📤 senden.</li>
+            <h2 class="text-xl font-bold text-blue-500 mb-4 text-center italic">OT-Doku Hilfe</h2>
+            <ul class="text-xs space-y-3 text-gray-300">
+                <li>⚙️ <b>Team:</b> Über das Zahnrad Mitarbeiter anlegen.</li>
+                <li>1️⃣ <b>Daten:</b> Wer macht die Fotos? Für welchen Kunden?</li>
+                <li>2️⃣ <b>Fotos:</b> Kamera starten & auslösen (max. 10 Bilder).</li>
+                <li>3️⃣ <b>Check:</b> Bilder bei Bedarf mit <b>✕</b> löschen.</li>
+                <li>4️⃣ <b>Teilen:</b> Über 📤 gesammelt als JPG versenden.</li>
+                <li class="pt-2 border-t border-gray-700 text-blue-400">💡 <b>Tipp:</b> Nutze "Zum Startbildschirm hinzufügen" für echtes App-Gefühl.</li>
             </ul>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-6 py-3 rounded-xl font-bold">Verstanden</button>
         </div>
     </div>
 
     <div class="max-w-5xl mx-auto h-full flex flex-col app-layout">
-        <header class="relative mb-2 flex items-center justify-between flex-shrink-0 px-2">
+        <header class="relative mb-2 flex items-center justify-between flex-shrink-0 px-2 mt-4">
             <div onclick="toggleSettings(true)" class="text-blue-500 text-2xl cursor-pointer">⚙️</div>
             <div class="text-center">
                 <h1 class="text-xl font-bold text-blue-500">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[10px]">OT-Doku v6.1 (Settings-Ready)</p>
+                <p class="text-gray-400 text-[10px]">OT-Doku v6.3 (PWA-Optimized)</p>
             </div>
             <div onclick="toggleHelp(true)" class="text-blue-500 text-3xl font-bold cursor-pointer">?</div>
         </header>
 
         <div id="setup-form" class="space-y-3 my-auto w-full max-w-lg mx-auto">
             <select id="staff-name" class="w-full p-4 rounded-lg bg-gray-800 border border-blue-500 text-blue-400 font-bold shadow-lg">
-                <option value="" disabled selected>Wer macht die Bilder?</option>
+                <option value="" disabled selected>Mitarbeiter wählen...</option>
             </select>
-            
-            <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Name, Vorname (Kunde)">
-            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum">
-            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Produkt / Versorgung">
-            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl">Kamera starten</button>
+            <input type="text" id="client-name" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 uppercase" placeholder="Kunde (NAME, Vorname)">
+            <input type="text" id="project-dob" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Geburtsdatum (DD.MM.YYYY)">
+            <input type="text" id="product-info" class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700" placeholder="Versorgung / Produkt">
+            <button onclick="initCamera()" class="w-full btn-sh p-5 rounded-xl font-bold text-lg shadow-xl uppercase tracking-wider">Kamera starten</button>
         </div>
 
         <div id="camera-section" class="hidden h-full flex flex-col app-layout overflow-hidden">
             <div class="video-wrapper">
                 <video id="video-preview" autoplay playsinline muted></video>
                 <div class="absolute bottom-4 left-0 right-0 flex justify-center z-50">
-                    <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-2xl active:scale-75 transition-transform">
-                        <div class="h-10 w-10 rounded-full border-2 border-black"></div>
+                    <button onclick="takePhoto()" class="bg-white h-16 w-16 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
+                        <div class="h-12 w-12 rounded-full border-2 border-black"></div>
                     </button>
                 </div>
             </div>
             <div class="controls-area">
                 <div class="flex justify-between items-center gap-2">
-                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400">
-                        <span id="display-info"></span> | <span id="photo-count" class="font-bold">0 / 10</span>
+                    <div class="bg-gray-900/80 p-2 rounded text-[9px] flex-1 truncate border border-gray-700 text-blue-400 uppercase font-mono">
+                        <span id="display-info"></span> | <span id="photo-count" class="font-bold text-white">0 / 10</span>
                     </div>
-                    <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden">📤 SENDEN</button>
+                    <button onclick="sharePhotos()" id="share-btn" class="btn-sh px-4 py-2 rounded-lg font-bold text-sm hidden shadow-lg">📤 SENDEN</button>
                 </div>
                 <div id="gallery"></div>
-                <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto">Abbrechen</button>
+                <button onclick="location.reload()" class="bg-gray-800 p-2 rounded-xl text-[10px] text-gray-400 w-full mt-auto uppercase tracking-widest">Abbrechen</button>
             </div>
         </div>
     </div>
@@ -104,33 +110,39 @@
 
     <script>
         let photos = [];
+        let deferredPrompt;
         let staffList = JSON.parse(localStorage.getItem('sh_staff')) || ["Christian"]; 
         const maxPhotos = 10;
-        const logoImg = new Image();
-        logoImg.src = "logo.png"; 
+        const logoImg = new Image(); logoImg.src = "logo.png"; 
 
-        window.onload = () => {
-            renderStaffLists();
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-            // Kleiner Hinweis falls nicht installiert
-            if (isIOS && !isStandalone) console.log("Bitte zum Homescreen hinzufügen");
-        };
+        // ANDROID PWA INSTALL LOGIK
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('android-install-bar').classList.remove('hidden');
+        });
 
-        // STAFF MANAGEMENT
+        function triggerAndroidInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choice) => {
+                    if (choice.outcome === 'accepted') document.getElementById('android-install-bar').classList.add('hidden');
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        window.onload = () => { renderStaffLists(); };
+
         function renderStaffLists() {
             const select = document.getElementById('staff-name');
             const adminList = document.getElementById('staff-list-admin');
-            
-            // Auswahlmenü füllen
-            select.innerHTML = '<option value="" disabled selected>Wer macht die Bilder?</option>';
+            select.innerHTML = '<option value="" disabled selected>Mitarbeiter wählen...</option>';
             staffList.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name; opt.innerText = name;
                 select.appendChild(opt);
             });
-
-            // Admin-Liste im Zahnrad füllen
             adminList.innerHTML = "";
             staffList.forEach((name, index) => {
                 const div = document.createElement('div');
@@ -143,35 +155,24 @@
 
         function addStaffMember() {
             const input = document.getElementById('new-staff-name');
-            if(input.value.trim()) {
-                staffList.push(input.value.trim());
-                input.value = "";
-                renderStaffLists();
-            }
+            if(input.value.trim()) { staffList.push(input.value.trim()); input.value = ""; renderStaffLists(); }
         }
 
-        function removeStaffMember(index) {
-            staffList.splice(index, 1);
-            renderStaffLists();
-        }
-
+        function removeStaffMember(index) { staffList.splice(index, 1); renderStaffLists(); }
         function toggleSettings(show) { document.getElementById('settings-modal').style.display = show ? 'flex' : 'none'; }
         function toggleHelp(show) { document.getElementById('help-modal').style.display = show ? 'flex' : 'none'; }
 
         async function initCamera() {
             const staff = document.getElementById('staff-name').value;
             const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('project-dob').value;
-            const product = document.getElementById('product-info').value;
-            if(!staff || !name || !dob || !product) return alert("Alle Felder füllen!");
-            
+            if(!staff || !name) return alert("Mitarbeiter und Kunden-Name sind Pflicht!");
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
                 document.getElementById('video-preview').srcObject = stream;
                 document.getElementById('setup-form').classList.add('hidden');
                 document.getElementById('camera-section').classList.remove('hidden');
-                document.getElementById('display-info').innerText = `${name} - ${staff}`;
-            } catch (err) { alert("Kamera-Fehler"); }
+                document.getElementById('display-info').innerText = `${name} | ${staff}`;
+            } catch (err) { alert("Kamera-Zugriff verweigert!"); }
         }
 
         function takePhoto() {
@@ -192,43 +193,29 @@
                 const logoW = canvas.width * 0.18;
                 const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
                 const padding = 20;
-                ctx.fillStyle = "rgba(100, 100, 100, 0.45)"; 
-                const bX = canvas.width - logoW - (padding*2) - margin;
-                const bY = margin;
-                roundRect(ctx, bX, bY, logoW + (padding*2), logoH + (padding*2), 15, true);
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.drawImage(logoImg, bX + padding, bY + padding, logoW, logoH);
-                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; 
+                roundRect(ctx, canvas.width - logoW - (padding*2) - margin, margin, logoW + (padding*2), logoH + (padding*2), 15, true);
+                ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
             }
 
             const fontSize = Math.floor(canvas.width / 45); 
-            ctx.font = `bold ${fontSize}px sans-serif`; ctx.fillStyle = "white"; ctx.shadowColor = "black"; ctx.shadowBlur = 8; ctx.textAlign = "right";
-            ctx.fillText(`Foto Doku: ${name} (${dob}) - ${product} - Erstellt von: ${staff}`, canvas.width - margin, canvas.height - margin);
+            ctx.font = `bold ${fontSize}px sans-serif`; ctx.fillStyle = "white"; ctx.textAlign = "right";
+            ctx.fillText(`DOKU: ${name} (${dob}) - ${product} - ${staff}`, canvas.width - margin, canvas.height - margin);
 
             canvas.toBlob((blob) => {
-                const newFile = new File([blob], `${name}_${staff}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
-                photos.push(newFile);
-                updateUI();
-            }, "image/jpeg", 0.92);
+                const file = new File([blob], `${name}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
+                photos.push(file); updateUI();
+            }, "image/jpeg", 0.90);
         }
-
-        function removePhoto(index) { photos.splice(index, 1); updateUI(); }
 
         function updateUI() {
             document.getElementById('photo-count').innerText = `${photos.length} / ${maxPhotos}`;
             const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
-            photos.forEach((p, index) => {
-                const container = document.createElement('div');
-                container.className = "thumb-container";
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(p);
-                img.className = "w-full h-full object-cover rounded border border-blue-500";
-                const deleteBtn = document.createElement('div');
-                deleteBtn.innerHTML = "✕";
-                deleteBtn.className = "absolute -top-1 -right-1 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg cursor-pointer";
-                deleteBtn.onclick = () => removePhoto(index);
-                container.appendChild(img); container.appendChild(deleteBtn);
-                gallery.prepend(container);
+            photos.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = "thumb-container";
+                div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500"><div onclick="photos.splice(${i},1);updateUI()" class="absolute -top-1 -right-1 bg-red-600 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">✕</div>`;
+                gallery.prepend(div);
             });
             document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
         }
@@ -239,10 +226,8 @@
         }
 
         async function sharePhotos() {
-            const name = document.getElementById('client-name').value;
-            const staff = document.getElementById('staff-name').value;
-            if (navigator.share && photos.length > 0) {
-                try { await navigator.share({ files: photos, title: `Doku ${name}`, text: `Fotos von ${staff}` }); } catch (e) {}
+            if (navigator.share) {
+                try { await navigator.share({ files: photos, title: 'OT-Doku' }); } catch (e) {}
             }
         }
     </script>
