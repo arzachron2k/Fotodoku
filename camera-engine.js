@@ -1,36 +1,24 @@
-/* --- KAMERA & FOTO ENGINE (AUTOMATISCHER WEISS-FILTER FÜR LOGO) --- */
+/* --- KAMERA & FOTO ENGINE (v8.9.2 - BEWÄHRTES LOGO MIT ROUNDRECT) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
+const logoImg = new Image();
+logoImg.src = "logo.png";
 
-// Temporäres Canvas für den automatischen Weiß-Abzug
-let processedLogoCanvas = null;
-const rawLogo = new Image();
-rawLogo.src = "logo.png";
-
-rawLogo.onload = () => {
-    // Weiß-Filter: Entfernt den weißen Hintergrund direkt im Speicher
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = rawLogo.naturalWidth;
-    tempCanvas.height = rawLogo.naturalHeight;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(rawLogo, 0, 0);
-
-    const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-    const d = imgData.data;
-
-    for (let i = 0; i < d.length; i += 4) {
-        const r = d[i];
-        const g = d[i + 1];
-        const b = d[i + 2];
-        // Wenn der Pixel weiß oder fast weiß ist (Schwellenwert 225), Alpha auf 0
-        if (r > 225 && g > 225 && b > 225) {
-            d[i + 3] = 0;
-        }
-    }
-    tempCtx.putImageData(imgData, 0, 0);
-    processedLogoCanvas = tempCanvas;
-};
+function roundRect(ctx, x, y, w, h, r, fill) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+}
 
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
@@ -73,15 +61,20 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // FREIGESTELLTES LOGO STEMPELN
-    const logoSource = processedLogoCanvas || (rawLogo.complete && rawLogo.naturalWidth ? rawLogo : null);
-    if(logoSource) {
-        const logoW = canvas.width * 0.16;
-        const logoH = (logoSource.height / logoSource.width) * logoW;
-        const x = canvas.width - logoW - margin;
-        const y = margin;
+    // LOGO-STEMPEL MIT ROUNDRECT (AUS v6.5)
+    if(logoImg.complete && logoImg.naturalWidth !== 0) {
+        const logoW = canvas.width * 0.18;
+        const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
+        const padding = 20;
 
-        ctx.drawImage(logoSource, x, y, logoW, logoH);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        const boxX = canvas.width - logoW - (padding * 2) - margin;
+        const boxY = margin;
+        const boxW = logoW + (padding * 2);
+        const boxH = logoH + (padding * 2);
+
+        roundRect(ctx, boxX, boxY, boxW, boxH, 15, true);
+        ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
     }
 
     // DATENSCHUTZ-STEMPEL: Nur Kd.-Nr. und Versorgung
@@ -148,4 +141,5 @@ async function sharePhotos() {
     } else {
         alert("Teilen wird von diesem Browser nicht unterstützt.");
     }
-}
+        }
+                  
