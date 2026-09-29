@@ -1,4 +1,4 @@
-/* --- KAMERA & FOTO ENGINE (v8.7 DATENSCHUTZ & LANDSCAPE) --- */
+/* --- KAMERA & FOTO ENGINE (v8.8) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
@@ -8,14 +8,14 @@ logoImg.src = "logo.png";
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
     currentStaff = staffSelect.value;
-    const name = document.getElementById('client-name').value;
+    const name = document.getElementById('client-name').value.trim();
     const clientNumber = document.getElementById('client-number').value.trim();
 
     if(!currentStaff || !name) {
         return alert("Bitte Mitarbeiter und Kundenname eingeben!");
     }
     if(!clientNumber) {
-        return alert("Bitte Kundennummer eingeben (wird für den Stempel benötigt)!");
+        return alert("Bitte Kundennummer eingeben!");
     }
 
     try {
@@ -24,10 +24,10 @@ async function initCamera() {
             audio: false 
         });
         document.getElementById('video-preview').srcObject = stream;
-        document.getElementById('setup-form').classList.add('hidden');
-        document.getElementById('camera-section').classList.remove('hidden');
         
-        // Anzeige oben in der Leiste (für den Mitarbeiter sichtbar)
+        // Schaltet das Formular und den Header garantiert aus
+        document.body.classList.add('camera-active');
+        
         document.getElementById('display-info').innerText = `Kd-Nr: ${clientNumber} | ${currentStaff}`;
     } catch (err) { 
         alert("Kamera-Fehler: " + err); 
@@ -48,7 +48,7 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // Logo stempeln (oben rechts)
+    // Logo oben rechts
     if(logoImg.complete && logoImg.naturalWidth !== 0) {
         const logoW = canvas.width * 0.18;
         const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
@@ -76,8 +76,7 @@ function takePhoto() {
         ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
     }
 
-    // DATENSCHUTZ-STEMPEL: NUR Kundennummer und Versorgung/Produkt!
-    // Kein Name, kein Geburtsdatum, kein Mitarbeiter auf dem sichtbaren Bild.
+    // DATENSCHUTZ-STEMPEL: Nur Kundennummer + Versorgung
     const footerText = product ? `Kd.-Nr.: ${clientNumber} - ${product}` : `Kd.-Nr.: ${clientNumber}`;
 
     const fontSize = Math.floor(canvas.width / 45);
@@ -88,7 +87,6 @@ function takePhoto() {
     ctx.shadowBlur = 6;
     ctx.fillText(footerText, canvas.width - margin, canvas.height - margin);
 
-    // Datei erzeugen
     const rawName = document.getElementById('client-name').value;
     const safeName = rawName.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
 
@@ -119,7 +117,6 @@ async function sharePhotos() {
     const dob = document.getElementById('project-dob').value;
     const product = document.getElementById('product-info').value;
 
-    // Im Betreff bleiben alle Infos für die Verwaltung erhalten
     const emailSubject = `Für Kostenvoranschlag/Doku, Kd-Nr: ${clientNumber}, ${name}, ${dob}, ${product}`;
 
     if (navigator.share) {
