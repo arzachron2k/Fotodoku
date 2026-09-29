@@ -1,62 +1,113 @@
-/* --- KAMERA & FOTO LOGIK --- */
+/* --- KAMERA & FOTO ENGINE (v8.7 DATENSCHUTZ & LANDSCAPE) --- */
 let photos = [];
+const maxPhotos = 10;
 let currentStaff = "";
-const bannerImg = new Image(); bannerImg.src = "banner.png"; 
+const logoImg = new Image();
+logoImg.src = "logo.png";
 
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
     currentStaff = staffSelect.value;
     const name = document.getElementById('client-name').value;
-    
-    if(!currentStaff || !name) return alert("Mitarbeiter und Kunde fehlen!");
-    
+    const clientNumber = document.getElementById('client-number').value.trim();
+
+    if(!currentStaff || !name) {
+        return alert("Bitte Mitarbeiter und Kundenname eingeben!");
+    }
+    if(!clientNumber) {
+        return alert("Bitte Kundennummer eingeben (wird für den Stempel benötigt)!");
+    }
+
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+            audio: false 
+        });
         document.getElementById('video-preview').srcObject = stream;
         document.getElementById('setup-form').classList.add('hidden');
         document.getElementById('camera-section').classList.remove('hidden');
-        document.getElementById('display-info').innerText = `${name} | ${currentStaff}`;
-    } catch (err) { alert("Kamera-Fehler: " + err); }
+        
+        // Anzeige oben in der Leiste (für den Mitarbeiter sichtbar)
+        document.getElementById('display-info').innerText = `Kd-Nr: ${clientNumber} | ${currentStaff}`;
+    } catch (err) { 
+        alert("Kamera-Fehler: " + err); 
+    }
 }
 
 function takePhoto() {
-    if(photos.length >= 10) return;
+    if(photos.length >= maxPhotos) return;
     const video = document.getElementById('video-preview');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    
+    canvas.width = video.videoWidth; 
+    canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    if(bannerImg.complete) {
-        ctx.save(); ctx.globalCompositeOperation = "multiply"; 
-        const bW = canvas.width * 0.20; const bH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bW;
-        ctx.drawImage(bannerImg, canvas.width - bW - 40, 40, bW, bH); ctx.restore();
+    const clientNumber = document.getElementById('client-number').value.trim();
+    const product = document.getElementById('product-info').value.trim();
+    const margin = 40;
+
+    // Logo stempeln (oben rechts)
+    if(logoImg.complete && logoImg.naturalWidth !== 0) {
+        const logoW = canvas.width * 0.18;
+        const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
+        const padding = 20;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        const r = 15;
+        const x = canvas.width - logoW - (padding * 2) - margin;
+        const y = margin;
+        const w = logoW + (padding * 2);
+        const h = logoH + (padding * 2);
+
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
     }
 
-    const name = document.getElementById('client-name').value;
-    const dob = document.getElementById('project-dob').value;
-    const product = document.getElementById('product-info').value;
-    const footer = `${name} (${dob}) - ${product} - ${currentStaff}`;
-    
-    ctx.font = `bold ${Math.floor(canvas.width/60)}px sans-serif`;
-    ctx.fillStyle = "white"; ctx.textAlign = "right";
-    ctx.shadowColor = "black"; ctx.shadowBlur = 4;
-    ctx.fillText(footer, canvas.width - 40, canvas.height - 40);
+    // DATENSCHUTZ-STEMPEL: NUR Kundennummer und Versorgung/Produkt!
+    // Kein Name, kein Geburtsdatum, kein Mitarbeiter auf dem sichtbaren Bild.
+    const footerText = product ? `Kd.-Nr.: ${clientNumber} - ${product}` : `Kd.-Nr.: ${clientNumber}`;
+
+    const fontSize = Math.floor(canvas.width / 45);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.fillStyle = "white";
+    ctx.textAlign = "right";
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 6;
+    ctx.fillText(footerText, canvas.width - margin, canvas.height - margin);
+
+    // Datei erzeugen
+    const rawName = document.getElementById('client-name').value;
+    const safeName = rawName.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
 
     canvas.toBlob((blob) => {
-        const safeName = name.replace(/[^a-z0-9]/gi, '_').substring(0,15);
-        const file = new File([blob], `Doku_${safeName}_${photos.length+1}.jpg`, { type: "image/jpeg" });
-        photos.push(file); updateUI();
-    }, "image/jpeg", 0.9);
+        const file = new File([blob], `Doku_${clientNumber}_${safeName}_${photos.length + 1}.jpg`, { type: "image/jpeg" });
+        photos.push(file);
+        updateGallery();
+    }, "image/jpeg", 0.90);
 }
 
-function updateUI() {
-    document.getElementById('photo-count').innerText = `${photos.length} / 10`;
-    const gallery = document.getElementById('gallery'); gallery.innerHTML = "";
-    photos.forEach((p) => {
+function updateGallery() {
+    document.getElementById('photo-count').innerText = `${photos.length} / ${maxPhotos}`;
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = "";
+    photos.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = "thumb-container";
-        div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500">`;
+        div.innerHTML = `<img src="${URL.createObjectURL(p)}" class="w-full h-full object-cover rounded-lg border border-blue-500 shadow-md">
+                         <div onclick="photos.splice(${i},1);updateGallery()" class="absolute -top-1 -right-1 bg-red-600 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-lg">✕</div>`;
         gallery.prepend(div);
     });
     document.getElementById('share-btn').classList.toggle('hidden', photos.length === 0);
@@ -64,12 +115,24 @@ function updateUI() {
 
 async function sharePhotos() {
     const name = document.getElementById('client-name').value;
+    const clientNumber = document.getElementById('client-number').value.trim();
     const dob = document.getElementById('project-dob').value;
     const product = document.getElementById('product-info').value;
-    const emailSubject = `Für Kostenvoranschlag/Doku, ${name}, ${dob}, ${product}`;
+
+    // Im Betreff bleiben alle Infos für die Verwaltung erhalten
+    const emailSubject = `Für Kostenvoranschlag/Doku, Kd-Nr: ${clientNumber}, ${name}, ${dob}, ${product}`;
 
     if (navigator.share) {
-        try { await navigator.share({ files: photos, title: emailSubject, text: emailSubject }); }
-        catch (e) { console.log("Abgebrochen"); }
+        try {
+            await navigator.share({
+                files: photos,
+                title: emailSubject,
+                text: emailSubject
+            });
+        } catch (e) {
+            console.log("Teilen abgebrochen");
+        }
+    } else {
+        alert("Teilen wird von diesem Browser nicht unterstützt.");
     }
 }
