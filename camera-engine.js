@@ -1,24 +1,7 @@
-/* --- KAMERA & FOTO ENGINE (v8.9.2 - BEWÄHRTES LOGO MIT ROUNDRECT) --- */
+/* --- KAMERA & FOTO ENGINE (v8.9.3 - WEG A: SCHRIFTZUG STATT BILD-KLOTZ) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
-const logoImg = new Image();
-logoImg.src = "logo.png";
-
-function roundRect(ctx, x, y, w, h, r, fill) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    if (fill) ctx.fill();
-}
 
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
@@ -26,10 +9,10 @@ async function initCamera() {
     const name = document.getElementById('client-name').value.trim();
     const clientNumber = document.getElementById('client-number').value.trim();
 
-    if(!currentStaff || !name) {
+    if (!currentStaff || !name) {
         return alert("Bitte Mitarbeiter und Kundenname eingeben!");
     }
-    if(!clientNumber) {
+    if (!clientNumber) {
         return alert("Bitte Kundennummer eingeben!");
     }
 
@@ -48,7 +31,7 @@ async function initCamera() {
 }
 
 function takePhoto() {
-    if(photos.length >= maxPhotos) return;
+    if (photos.length >= maxPhotos) return;
     const video = document.getElementById('video-preview');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -61,34 +44,30 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // LOGO-STEMPEL MIT ROUNDRECT (AUS v6.5)
-    if(logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoW = canvas.width * 0.18;
-        const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
-        const padding = 20;
+    // --- 1. WASSERZEICHEN OBEN RECHTS (WEG A: DIREKT ALS TEXT) ---
+    const headerFontSize = Math.floor(canvas.width / 44);
+    ctx.font = `bold ${headerFontSize}px sans-serif`;
+    ctx.textAlign = "right";
+    
+    // Zweifarbiger / Kontrast-Schatten, damit man es auf hellen und dunklen Hintergründen perfekt liest
+    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Sanitätshaus Schmiedel", canvas.width - margin, margin + headerFontSize);
+    ctx.shadowBlur = 0; // Schatten zurücksetzen
 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        const boxX = canvas.width - logoW - (padding * 2) - margin;
-        const boxY = margin;
-        const boxW = logoW + (padding * 2);
-        const boxH = logoH + (padding * 2);
-
-        roundRect(ctx, boxX, boxY, boxW, boxH, 15, true);
-        ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
-    }
-
-    // DATENSCHUTZ-STEMPEL: Nur Kd.-Nr. und Versorgung
+    // --- 2. DATENSCHUTZ-STEMPEL UNTEN RECHTS ---
     const footerText = product ? `Kd.-Nr.: ${clientNumber} - ${product}` : `Kd.-Nr.: ${clientNumber}`;
-
-    const fontSize = Math.floor(canvas.width / 45);
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.fillStyle = "white";
+    const footerFontSize = Math.floor(canvas.width / 48);
+    ctx.font = `bold ${footerFontSize}px sans-serif`;
+    ctx.fillStyle = "#ffffff";
     ctx.textAlign = "right";
     ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
     ctx.shadowBlur = 8;
     ctx.fillText(footerText, canvas.width - margin, canvas.height - margin);
     ctx.shadowBlur = 0;
 
+    // Dateiname für den internen Export
     const rawName = document.getElementById('client-name').value;
     const safeName = rawName.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
 
@@ -119,6 +98,7 @@ async function sharePhotos() {
     const dob = document.getElementById('project-dob').value.trim();
     const product = document.getElementById('product-info').value.trim();
 
+    // Alle Daten für den KV landen im E-Mail-Text / Betreff, aber nicht auf dem Bild
     const details = [
         `Kd-Nr: ${clientNumber}`,
         name,
@@ -141,5 +121,5 @@ async function sharePhotos() {
     } else {
         alert("Teilen wird von diesem Browser nicht unterstützt.");
     }
-        }
-                  
+}
+    
