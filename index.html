@@ -18,21 +18,25 @@
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
         canvas { position: fixed; left: -9999px; visibility: hidden; }
 
-        /* HOCHFORMAT */
+        /* ALLGEMEINES LAYOUT */
         #app-container { display: flex; flex-direction: column; width: 100%; height: 100%; }
         #setup-form { display: flex; flex-direction: column; gap: 8px; margin: auto; width: 100%; max-width: 480px; }
         #camera-section { display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
         
         .video-wrapper { position: relative; width: 100%; flex: 1 1 auto; background: #000; border-radius: 12px; overflow: hidden; min-height: 0; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
-        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
+        
+        .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding-top: 6px; align-items: stretch; }
+        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 65px; overflow-y: auto; }
         .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
 
-        /* STATUS WENN KAMERA LÄUFT */
+        /* WENN KAMERA STARTET */
         body.camera-active #setup-form { display: none !important; }
         body.camera-active #app-header { display: none !important; }
         body.camera-active #camera-section { display: flex !important; }
+
+        /* HOCHFORMAT: Auslöser zentriert */
+        .shutter-btn-box { display: flex; justify-content: center; width: 100%; margin: 2px 0; }
 
         /* QUERFORMAT (LANDSCAPE) */
         @media (orientation: landscape) {
@@ -40,13 +44,19 @@
             #setup-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 600px; }
             #setup-form button { grid-column: span 2; }
 
-            body.camera-active #camera-section { flex-direction: row !important; gap: 10px; }
+            body.camera-active #camera-section { flex-direction: row !important; gap: 12px; }
             body.camera-active .video-wrapper { flex: 1 1 72% !important; height: 100% !important; }
-            body.camera-active .controls-area { flex: 0 0 28% !important; height: 100% !important; justify-content: space-between; padding-top: 0; }
-            
-            /* Auslöser im Querformat als eigener Button in der rechten Steuerleiste */
-            body.camera-active #shutter-container { position: static !important; display: flex; justify-content: center; width: 100%; padding: 4px 0; }
-            body.camera-active #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: 90px !important; }
+            body.camera-active .controls-area { 
+                flex: 0 0 28% !important; 
+                height: 100% !important; 
+                padding: 0 !important; 
+                display: flex !important; 
+                flex-direction: column !important; 
+                justify-content: space-between !important; 
+            }
+            body.camera-active .shutter-btn-box { order: 2; margin: auto 0; }
+            body.camera-active #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: 80px !important; order: 3; }
+            body.camera-active .action-buttons { order: 4; }
         }
     </style>
 </head>
@@ -69,7 +79,7 @@
             <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-2">⚙️</div>
             <div class="text-center">
                 <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-                <p class="text-gray-400 text-[9px]">OT-Doku v8.8</p>
+                <p class="text-gray-400 text-[9px]">OT-Doku v8.9</p>
             </div>
             <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-2">?</div>
         </header>
@@ -86,27 +96,34 @@
 
         <!-- CAMERA SECTION -->
         <div id="camera-section">
+            <!-- KAMERABILD LINKS -->
             <div class="video-wrapper">
                 <video id="video-preview" autoplay playsinline muted></video>
-                <div id="shutter-container" class="absolute bottom-3 left-0 right-0 flex justify-center z-50">
-                    <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
-                        <div class="h-10 w-10 rounded-full border-2 border-black"></div>
-                    </button>
-                </div>
             </div>
 
+            <!-- BEDIENUNG RECHTS (IM QUERFORMAT) BZW. UNTEN (IM HOCHFORMAT) -->
             <div class="controls-area">
+                <!-- INFO-LEISTE -->
                 <div class="bg-gray-800 p-1.5 rounded text-[10px] flex justify-between border border-gray-700 text-blue-400 uppercase">
                     <span id="display-info" class="truncate mr-1"></span>
                     <span id="photo-count" class="font-bold text-white whitespace-nowrap">0 / 10</span>
                 </div>
 
-                <div class="flex gap-2">
+                <!-- DER AUSLÖSER: Jetzt fest in der Leiste, kann nicht mehr verschwinden -->
+                <div class="shutter-btn-box">
+                    <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
+                        <div class="h-10 w-10 rounded-full border-2 border-black"></div>
+                    </button>
+                </div>
+
+                <!-- GALERIE -->
+                <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
+
+                <!-- BUTTONS -->
+                <div class="flex gap-2 action-buttons">
                     <button onclick="location.reload()" class="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase text-center">✕ Abbruch</button>
                     <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-2.5 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase text-white">📤 Senden</button>
                 </div>
-
-                <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
             </div>
         </div>
     </div>
@@ -133,7 +150,7 @@
             <div class="space-y-3 text-xs text-gray-200">
                 <p><strong>1. Daten:</strong> Kundennummer, Name und Versorgung eingeben.</p>
                 <p><strong>2. Datenschutz:</strong> Auf dem Foto stehen nur noch <strong>Kundennummer</strong> und <strong>Versorgung</strong>.</p>
-                <p><strong>3. Querformat:</strong> Links ist das große Kamerabild, rechts Auslöser und Galerie.</p>
+                <p><strong>3. Querformat:</strong> Links ist das große Sucherbild, rechts sitzen Auslöser und Galerie.</p>
             </div>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-5 py-3 rounded-xl font-bold uppercase">VERSTANDEN</button>
         </div>
@@ -144,5 +161,4 @@
     <script src="ui-controller.js"></script>
     <script src="camera-engine.js"></script>
 </body>
-            </html>
-            
+</html>
