@@ -11,33 +11,47 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; }
+        body { background-color: #121212; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; inset: 0; width: 100vw; height: 100vh; margin: 0; padding: 8px; }
         .btn-sh { background-color: #2563eb; }
-        .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; flex: 1 1 auto; min-height: 0; }
-        #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 6px 0 env(safe-area-inset-bottom); }
-        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
-        .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
-        canvas { position: fixed; left: -9999px; visibility: hidden; }
         select, input { background-color: #1f2937 !important; border: 1px solid #374151 !important; color: white !important; }
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; padding: 1.5rem; justify-content: center; align-items: center; }
+        canvas { position: fixed; left: -9999px; visibility: hidden; }
 
-        /* --- QUERFORMAT (LANDSCAPE) ANPASSUNGEN --- */
+        /* HOCHFORMAT */
+        #app-container { display: flex; flex-direction: column; width: 100%; height: 100%; }
+        #setup-form { display: flex; flex-direction: column; gap: 8px; margin: auto; width: 100%; max-width: 480px; }
+        #camera-section { display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
+        
+        .video-wrapper { position: relative; width: 100%; flex: 1 1 auto; background: #000; border-radius: 12px; overflow: hidden; min-height: 0; }
+        #video-preview { width: 100%; height: 100%; object-fit: cover; }
+        .controls-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+        #gallery { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 70px; overflow-y: auto; }
+        .thumb-container { position: relative; width: 100%; aspect-ratio: 1/1; }
+
+        /* STATUS WENN KAMERA LÄUFT */
+        body.camera-active #setup-form { display: none !important; }
+        body.camera-active #app-header { display: none !important; }
+        body.camera-active #camera-section { display: flex !important; }
+
+        /* QUERFORMAT (LANDSCAPE) */
         @media (orientation: landscape) {
-            #app-header { display: none; }
-            #camera-section { flex-direction: row !important; gap: 8px; }
-            .video-wrapper { flex: 1 1 70% !important; height: 100% !important; border-radius: 10px; }
-            .controls-area { flex: 0 0 30% !important; height: 100% !important; padding: 0 !important; justify-content: space-between; }
-            #shutter-container { position: static !important; display: flex; justify-content: center; margin-bottom: 4px; }
-            #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: 110px !important; }
-            #setup-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            body { padding: 6px 12px; }
+            #setup-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 600px; }
             #setup-form button { grid-column: span 2; }
+
+            body.camera-active #camera-section { flex-direction: row !important; gap: 10px; }
+            body.camera-active .video-wrapper { flex: 1 1 72% !important; height: 100% !important; }
+            body.camera-active .controls-area { flex: 0 0 28% !important; height: 100% !important; justify-content: space-between; padding-top: 0; }
+            
+            /* Auslöser im Querformat als eigener Button in der rechten Steuerleiste */
+            body.camera-active #shutter-container { position: static !important; display: flex; justify-content: center; width: 100%; padding: 4px 0; }
+            body.camera-active #gallery { grid-template-columns: repeat(3, 1fr) !important; max-height: 90px !important; }
         }
     </style>
 </head>
-<body class="p-2 sm:p-3">
+<body>
 
-    <!-- INSTALL BANNER -->
     <div id="install-banner" class="hidden bg-blue-600 m-1 p-2 rounded-xl flex items-center justify-between shadow-2xl border border-blue-400 z-[200]">
         <div class="flex items-center gap-2">
             <span class="text-xl">📲</span>
@@ -49,53 +63,51 @@
         <button onclick="closeInstallBanner()" class="bg-black/20 h-7 w-7 rounded-full font-bold text-xs">✕</button>
     </div>
 
-    <!-- HEADER -->
-    <header id="app-header" class="relative flex items-center justify-between flex-shrink-0 px-2 pt-1 mb-2">
-        <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-2">⚙️</div>
-        <div class="text-center">
-            <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
-            <p class="text-gray-400 text-[9px]">OT-Doku v8.7</p>
-        </div>
-        <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-2">?</div>
-    </header>
-
-    <!-- SETUP FORM -->
-    <div id="setup-form" class="space-y-2 my-auto w-full max-w-lg mx-auto">
-        <select id="staff-name" onchange="saveLastStaff()" class="w-full p-3.5 rounded-lg font-bold shadow-lg"></select>
-        <input type="text" id="client-name" class="w-full p-3.5 rounded-lg uppercase" placeholder="Kunde (NAME, Vorname)">
-        <input type="text" id="client-number" class="w-full p-3.5 rounded-lg uppercase font-bold" placeholder="Kundennummer (für Foto-Stempel)">
-        <input type="text" id="project-dob" class="w-full p-3.5 rounded-lg" placeholder="Geburtsdatum">
-        <input type="text" id="product-info" class="w-full p-3.5 rounded-lg" placeholder="Versorgung / Produkt">
-        <button onclick="initCamera()" class="w-full btn-sh p-4 rounded-xl font-bold text-lg shadow-xl uppercase">📸 Kamera starten</button>
-    </div>
-
-    <!-- CAMERA SECTION -->
-    <div id="camera-section" class="hidden flex-1 flex flex-col overflow-hidden">
-        
-        <!-- KAMERA BILD -->
-        <div class="video-wrapper">
-            <video id="video-preview" autoplay playsinline muted></video>
-            <!-- Auslöser im Hochformat überlagert, im Querformat wandert er nach rechts -->
-            <div id="shutter-container" class="absolute bottom-3 left-0 right-0 flex justify-center z-50">
-                <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
-                    <div class="h-10 w-10 rounded-full border-2 border-black"></div>
-                </button>
+    <div id="app-container">
+        <!-- HEADER -->
+        <header id="app-header" class="relative flex items-center justify-between flex-shrink-0 px-2 pt-1 mb-2">
+            <div onclick="toggleSettings(true)" class="text-blue-500 text-3xl cursor-pointer p-2">⚙️</div>
+            <div class="text-center">
+                <h1 class="text-lg font-bold text-blue-500 uppercase leading-tight">SH-Schmiedel</h1>
+                <p class="text-gray-400 text-[9px]">OT-Doku v8.8</p>
             </div>
+            <div onclick="toggleHelp(true)" class="text-blue-500 text-4xl font-bold cursor-pointer p-2">?</div>
+        </header>
+
+        <!-- SETUP FORM -->
+        <div id="setup-form">
+            <select id="staff-name" onchange="saveLastStaff()" class="p-3 rounded-lg font-bold shadow-lg"></select>
+            <input type="text" id="client-name" class="p-3 rounded-lg uppercase" placeholder="Kunde (NAME, Vorname)">
+            <input type="text" id="client-number" class="p-3 rounded-lg uppercase font-bold" placeholder="Kundennummer">
+            <input type="text" id="project-dob" class="p-3 rounded-lg" placeholder="Geburtsdatum">
+            <input type="text" id="product-info" class="p-3 rounded-lg" placeholder="Versorgung / Produkt">
+            <button onclick="initCamera()" class="btn-sh p-4 rounded-xl font-bold text-lg shadow-xl uppercase">📸 Kamera starten</button>
         </div>
 
-        <!-- BEDIENLEISTE (RECHTS IM QUERFORMAT) -->
-        <div class="controls-area">
-            <div class="bg-gray-800 p-1.5 rounded text-[10px] flex justify-between border border-gray-700 text-blue-400 uppercase">
-                <span id="display-info" class="truncate mr-1"></span>
-                <span id="photo-count" class="font-bold text-white whitespace-nowrap">0 / 10</span>
+        <!-- CAMERA SECTION -->
+        <div id="camera-section">
+            <div class="video-wrapper">
+                <video id="video-preview" autoplay playsinline muted></video>
+                <div id="shutter-container" class="absolute bottom-3 left-0 right-0 flex justify-center z-50">
+                    <button onclick="takePhoto()" class="bg-white h-14 w-14 rounded-full border-4 border-blue-500 shadow-2xl active:scale-90 transition-transform flex items-center justify-center">
+                        <div class="h-10 w-10 rounded-full border-2 border-black"></div>
+                    </button>
+                </div>
             </div>
 
-            <div class="flex gap-2">
-                <button onclick="location.reload()" class="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase text-center">✕ Abbruch</button>
-                <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-2.5 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase text-white">📤 Senden</button>
-            </div>
+            <div class="controls-area">
+                <div class="bg-gray-800 p-1.5 rounded text-[10px] flex justify-between border border-gray-700 text-blue-400 uppercase">
+                    <span id="display-info" class="truncate mr-1"></span>
+                    <span id="photo-count" class="font-bold text-white whitespace-nowrap">0 / 10</span>
+                </div>
 
-            <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
+                <div class="flex gap-2">
+                    <button onclick="location.reload()" class="flex-1 py-2.5 rounded-lg bg-red-900/40 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase text-center">✕ Abbruch</button>
+                    <button onclick="sharePhotos()" id="share-btn" class="flex-[2] btn-sh py-2.5 rounded-lg font-bold text-[10px] hidden shadow-lg uppercase text-white">📤 Senden</button>
+                </div>
+
+                <div id="gallery" class="bg-gray-900/50 rounded-lg p-1"></div>
+            </div>
         </div>
     </div>
 
@@ -119,9 +131,9 @@
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm border border-blue-500 shadow-2xl" onclick="event.stopPropagation()">
             <h2 class="text-xl font-bold text-blue-500 mb-4 text-center uppercase">So geht's:</h2>
             <div class="space-y-3 text-xs text-gray-200">
-                <p><strong>1. Daten eingeben:</strong> Kundennummer, Kunde und Versorgung erfassen.</p>
+                <p><strong>1. Daten:</strong> Kundennummer, Name und Versorgung eingeben.</p>
                 <p><strong>2. Datenschutz:</strong> Auf dem Foto stehen nur noch <strong>Kundennummer</strong> und <strong>Versorgung</strong>.</p>
-                <p><strong>3. Querformat:</strong> Dreh das Handy einfach quer – das Bild wird automatisch groß und der Auslöser rückt nach rechts.</p>
+                <p><strong>3. Querformat:</strong> Links ist das große Kamerabild, rechts Auslöser und Galerie.</p>
             </div>
             <button onclick="toggleHelp(false)" class="w-full btn-sh mt-5 py-3 rounded-xl font-bold uppercase">VERSTANDEN</button>
         </div>
@@ -132,4 +144,5 @@
     <script src="ui-controller.js"></script>
     <script src="camera-engine.js"></script>
 </body>
-</html>
+            </html>
+            
