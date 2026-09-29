@@ -1,4 +1,4 @@
-/* --- KAMERA & FOTO ENGINE (v8.8) --- */
+/* --- KAMERA & FOTO ENGINE (v8.9.1 - TRANSPARENTES LOGO) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
@@ -25,9 +25,7 @@ async function initCamera() {
         });
         document.getElementById('video-preview').srcObject = stream;
         
-        // Schaltet das Formular und den Header garantiert aus
         document.body.classList.add('camera-active');
-        
         document.getElementById('display-info').innerText = `Kd-Nr: ${clientNumber} | ${currentStaff}`;
     } catch (err) { 
         alert("Kamera-Fehler: " + err); 
@@ -48,13 +46,15 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // Logo oben rechts
+    // LOGO-STEMPEL (Sauber & Transparent)
     if(logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoW = canvas.width * 0.18;
+        const logoW = canvas.width * 0.16;
         const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
-        const padding = 20;
+        const padding = 14;
+
+        // Halbtransparenter, abgerundeter dunkler Hintergrund für guten Kontrast
         ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        const r = 15;
+        const r = 12;
         const x = canvas.width - logoW - (padding * 2) - margin;
         const y = margin;
         const w = logoW + (padding * 2);
@@ -65,7 +65,7 @@ function takePhoto() {
         ctx.lineTo(x + w - r, y);
         ctx.quadraticCurveTo(x + w, y, x + w, y + r);
         ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.quadraticCurveTo(x + w, y, x + w - r, y + h);
         ctx.lineTo(x + r, y + h);
         ctx.quadraticCurveTo(x, y + h, x, y + h - r);
         ctx.lineTo(x, y + r);
@@ -73,19 +73,21 @@ function takePhoto() {
         ctx.closePath();
         ctx.fill();
 
+        // Logo transparent einzeichnen
         ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
     }
 
-    // DATENSCHUTZ-STEMPEL: Nur Kundennummer + Versorgung
+    // DATENSCHUTZ-STEMPEL: Nur Kd.-Nr. und Versorgung
     const footerText = product ? `Kd.-Nr.: ${clientNumber} - ${product}` : `Kd.-Nr.: ${clientNumber}`;
 
     const fontSize = Math.floor(canvas.width / 45);
     ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.fillStyle = "white";
     ctx.textAlign = "right";
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 6;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+    ctx.shadowBlur = 8;
     ctx.fillText(footerText, canvas.width - margin, canvas.height - margin);
+    ctx.shadowBlur = 0; // Schatten zurücksetzen
 
     const rawName = document.getElementById('client-name').value;
     const safeName = rawName.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
@@ -112,12 +114,20 @@ function updateGallery() {
 }
 
 async function sharePhotos() {
-    const name = document.getElementById('client-name').value;
+    const name = document.getElementById('client-name').value.trim();
     const clientNumber = document.getElementById('client-number').value.trim();
-    const dob = document.getElementById('project-dob').value;
-    const product = document.getElementById('product-info').value;
+    const dob = document.getElementById('project-dob').value.trim();
+    const product = document.getElementById('product-info').value.trim();
 
-    const emailSubject = `Für Kostenvoranschlag/Doku, Kd-Nr: ${clientNumber}, ${name}, ${dob}, ${product}`;
+    // Saubere Betreffzeile ohne leere Kommas
+    const details = [
+        `Kd-Nr: ${clientNumber}`,
+        name,
+        dob ? `Geb: ${dob}` : null,
+        product ? `Versorgung: ${product}` : null
+    ].filter(Boolean).join(', ');
+
+    const emailSubject = `Für Kostenvoranschlag/Doku, ${details}`;
 
     if (navigator.share) {
         try {
