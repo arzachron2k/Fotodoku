@@ -1,9 +1,36 @@
-/* --- KAMERA & FOTO ENGINE (v8.9.1 - TRANSPARENTES LOGO) --- */
+/* --- KAMERA & FOTO ENGINE (AUTOMATISCHER WEISS-FILTER FÜR LOGO) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
-const logoImg = new Image();
-logoImg.src = "logo.png";
+
+// Temporäres Canvas für den automatischen Weiß-Abzug
+let processedLogoCanvas = null;
+const rawLogo = new Image();
+rawLogo.src = "logo.png";
+
+rawLogo.onload = () => {
+    // Weiß-Filter: Entfernt den weißen Hintergrund direkt im Speicher
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = rawLogo.naturalWidth;
+    tempCanvas.height = rawLogo.naturalHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(rawLogo, 0, 0);
+
+    const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const d = imgData.data;
+
+    for (let i = 0; i < d.length; i += 4) {
+        const r = d[i];
+        const g = d[i + 1];
+        const b = d[i + 2];
+        // Wenn der Pixel weiß oder fast weiß ist (Schwellenwert 225), Alpha auf 0
+        if (r > 225 && g > 225 && b > 225) {
+            d[i + 3] = 0;
+        }
+    }
+    tempCtx.putImageData(imgData, 0, 0);
+    processedLogoCanvas = tempCanvas;
+};
 
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
@@ -46,35 +73,15 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // LOGO-STEMPEL (Sauber & Transparent)
-    if(logoImg.complete && logoImg.naturalWidth !== 0) {
+    // FREIGESTELLTES LOGO STEMPELN
+    const logoSource = processedLogoCanvas || (rawLogo.complete && rawLogo.naturalWidth ? rawLogo : null);
+    if(logoSource) {
         const logoW = canvas.width * 0.16;
-        const logoH = (logoImg.naturalHeight / logoImg.naturalWidth) * logoW;
-        const padding = 14;
-
-        // Halbtransparenter, abgerundeter dunkler Hintergrund für guten Kontrast
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        const r = 12;
-        const x = canvas.width - logoW - (padding * 2) - margin;
+        const logoH = (logoSource.height / logoSource.width) * logoW;
+        const x = canvas.width - logoW - margin;
         const y = margin;
-        const w = logoW + (padding * 2);
-        const h = logoH + (padding * 2);
 
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
-        ctx.fill();
-
-        // Logo transparent einzeichnen
-        ctx.drawImage(logoImg, canvas.width - logoW - padding - margin, margin + padding, logoW, logoH);
+        ctx.drawImage(logoSource, x, y, logoW, logoH);
     }
 
     // DATENSCHUTZ-STEMPEL: Nur Kd.-Nr. und Versorgung
@@ -87,7 +94,7 @@ function takePhoto() {
     ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
     ctx.shadowBlur = 8;
     ctx.fillText(footerText, canvas.width - margin, canvas.height - margin);
-    ctx.shadowBlur = 0; // Schatten zurücksetzen
+    ctx.shadowBlur = 0;
 
     const rawName = document.getElementById('client-name').value;
     const safeName = rawName.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
@@ -119,7 +126,6 @@ async function sharePhotos() {
     const dob = document.getElementById('project-dob').value.trim();
     const product = document.getElementById('product-info').value.trim();
 
-    // Saubere Betreffzeile ohne leere Kommas
     const details = [
         `Kd-Nr: ${clientNumber}`,
         name,
