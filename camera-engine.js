@@ -1,7 +1,11 @@
-/* --- KAMERA & FOTO ENGINE (v8.9.3 - WEG A: SCHRIFTZUG STATT BILD-KLOTZ) --- */
+/* --- KAMERA & FOTO ENGINE (v8.9.4 - MIT BANNER.PNG & DATENSCHUTZ) --- */
 let photos = [];
 const maxPhotos = 10;
 let currentStaff = "";
+
+// Hier laden wir jetzt die richtige Datei: banner.png!
+const bannerImg = new Image();
+bannerImg.src = "banner.png";
 
 async function initCamera() {
     const staffSelect = document.getElementById('staff-name');
@@ -44,17 +48,17 @@ function takePhoto() {
     const product = document.getElementById('product-info').value.trim();
     const margin = 40;
 
-    // --- 1. WASSERZEICHEN OBEN RECHTS (WEG A: DIREKT ALS TEXT) ---
-    const headerFontSize = Math.floor(canvas.width / 44);
-    ctx.font = `bold ${headerFontSize}px sans-serif`;
-    ctx.textAlign = "right";
-    
-    // Zweifarbiger / Kontrast-Schatten, damit man es auf hellen und dunklen Hintergründen perfekt liest
-    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-    ctx.shadowBlur = 6;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("Sanitätshaus Schmiedel", canvas.width - margin, margin + headerFontSize);
-    ctx.shadowBlur = 0; // Schatten zurücksetzen
+    // --- 1. ORIGINAL FIRMEN-BANNER OBEN RECHTS (TRANSPARENT) ---
+    if (bannerImg.complete && bannerImg.naturalWidth !== 0) {
+        // Banner-Breite ca. 24% der Bildbreite
+        const bannerW = canvas.width * 0.24;
+        const bannerH = (bannerImg.naturalHeight / bannerImg.naturalWidth) * bannerW;
+        const x = canvas.width - bannerW - margin;
+        const y = margin;
+
+        // Direkt ohne Kasten transparent einzeichnen
+        ctx.drawImage(bannerImg, x, y, bannerW, bannerH);
+    }
 
     // --- 2. DATENSCHUTZ-STEMPEL UNTEN RECHTS ---
     const footerText = product ? `Kd.-Nr.: ${clientNumber} - ${product}` : `Kd.-Nr.: ${clientNumber}`;
@@ -98,7 +102,6 @@ async function sharePhotos() {
     const dob = document.getElementById('project-dob').value.trim();
     const product = document.getElementById('product-info').value.trim();
 
-    // Alle Daten für den KV landen im E-Mail-Text / Betreff, aber nicht auf dem Bild
     const details = [
         `Kd-Nr: ${clientNumber}`,
         name,
@@ -122,4 +125,3 @@ async function sharePhotos() {
         alert("Teilen wird von diesem Browser nicht unterstützt.");
     }
 }
-    
